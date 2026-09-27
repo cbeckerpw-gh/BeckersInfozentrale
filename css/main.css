@@ -1,1 +1,118 @@
+/* ==========================================================================
+   GLOBALES STYLING & RESPONSIVE LAYOUT (main.css)
+   Targeting: iPad Querformat (10") & Smartphones
+   ========================================================================== */
 
+:root {
+    --bg-color: #f0f4f8;
+    --card-bg: #ffffff;
+    --font-family: 'Comic Sans MS', 'Chalkboard SE', 'Fredoka', sans-serif;
+    
+    /* Personen-Farben */
+    --color-papa: #3b82f6;     /* Blau */
+    --color-mama: #ec4899;     /* Rosa/Pink */
+    --color-oskar: #10b981;    /* Grün */
+    --color-irma: #f59e0b;     /* Orange/Gelb */
+    --color-eltern: #8b5cf6;   /* Violett */
+    
+    /* System-Farben */
+    --color-success: #22c55e;
+    --color-danger: #ef4444;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: var(--font-family);
+    background-color: var(--bg-color);
+    color: #1e293b;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden; /* Auf dem iPad Wanddisplay kein Scrollen des Body */
+    padding: 10px;
+}
+
+/* App Header & Legende */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card-bg);
+    padding: 10px 20px;
+    border-radius: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    margin-bottom: 10px;
+}
+
+.legend-bar {
+    display: flex;
+    gap: 12px;
+}
+
+.person-tag {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border-radius: 12px;
+    font-weight: bold;
+    color: white;
+    font-size: 0.95rem;
+}
+
+.person-papa { background-color: var(--color-papa); }
+.person-mama { background-color: var(--color-mama); }
+.person-oskar { background-color: var(--color-oskar); }
+.person-irma { background-color: var(--color-irma); }
+.person-eltern { background-color: var(--color-eltern); }
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 0.9rem;
+    color: #64748b;
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+/* Modals & Popups Globale Overlays */
+.modal-overlay, .popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+/* Responsivität für Smartphones */
+@media (max-width: 768px) {
+    body {
+        overflow: auto;
+    }
+    
+    .legend-bar {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .person-tag {
+        padding: 4px 8px;
+        font-size: 0.8rem;
+    }
+}
