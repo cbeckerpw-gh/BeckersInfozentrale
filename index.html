@@ -1,88 +1,274 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Familienplaner & Dashboard</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Familien-Dashboard & Energie-Monitor</title>
+  <style>
+    :root {
+      --bg-color: #f0f4f8;
+      --card-bg: #ffffff;
+      --text-color: #2d3748;
+      --border-radius: 16px;
+      --shadow: 0 4px 6px rgba(0, 0, 0, 0.05), 0 10px 15px rgba(0, 0, 0, 0.1);
+      --color-papa: #3182ce;
+      --color-mama: #ed64a6;
+      --color-oskar: #48bb78;
+      --color-irma: #ecc94b;
+      --color-familie: #9f7aea;
+      --color-pv: #ecc94b;
+      --color-bat: #48bb78;
+      --color-home: #ed8936;
+      --color-grid: #e53e3e;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 15px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .top-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--card-bg);
+      padding: 12px 20px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      margin-bottom: 12px;
+    }
+    .legend {
+      display: flex;
+      gap: 15px;
+    }
+    .member-tag {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-weight: 600;
+      color: white;
+      font-size: 0.95rem;
+    }
+    .tag-papa { background-color: var(--color-papa); }
+    .tag-mama { background-color: var(--color-mama); }
+    .tag-oskar { background-color: var(--color-oskar); color: #1a202c; }
+    .tag-irma { background-color: var(--color-irma); color: #1a202c; }
+    .tag-familie { background-color: var(--color-familie); }
+    
+    .btn-settings {
+      background: #e2e8f0;
+      border: none;
+      padding: 8px 15px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 1.1rem;
+    }
+    .energy-bar {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+    .energy-card {
+      background: var(--card-bg);
+      padding: 12px;
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      border-bottom: 5px solid transparent;
+    }
+    .energy-card .value {
+      font-size: 1.4rem;
+      font-weight: bold;
+      margin-top: 4px;
+    }
+    .energy-card .label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      color: #718096;
+      font-weight: bold;
+    }
+    .planner-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      flex: 1;
+      overflow: hidden;
+    }
+    .day-column {
+      background: var(--card-bg);
+      border-radius: var(--border-radius);
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .day-header {
+      background: #edf2f7;
+      padding: 12px;
+      text-align: center;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    .day-header h2 { font-size: 1.3rem; color: #2b6cb0; }
+    .day-header span { font-size: 0.85rem; color: #4a5568; }
+    
+    .event-list {
+      padding: 12px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .event-item {
+      padding: 10px 12px;
+      border-radius: 10px;
+      color: white;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .event-item.papa { background-color: var(--color-papa); }
+    .event-item.mama { background-color: var(--color-mama); }
+    .event-item.oskar { background-color: var(--color-oskar); color: #1a202c; }
+    .event-item.irma { background-color: var(--color-irma); color: #1a202c; }
+    .event-item.familie { background-color: var(--color-familie); }
+    
+    .event-time { font-size: 0.8rem; font-weight: bold; opacity: 0.9; }
+    .event-title { font-size: 1.05rem; font-weight: 600; }
+    
+    .fab-timer {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      width: 65px;
+      height: 65px;
+      background: #ff6b6b;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      color: white;
+      font-size: 2rem;
+      cursor: pointer;
+      z-index: 99;
+    }
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(5px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .overlay.active { opacity: 1; pointer-events: auto; }
+    .modal-card {
+      background: white;
+      padding: 25px;
+      border-radius: calc(var(--border-radius) * 1.5);
+      box-shadow: var(--shadow);
+      max-width: 500px;
+      width: 90%;
+      text-align: center;
+      position: relative;
+    }
+    .timer-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+    .selection-box { display: flex; flex-direction: column; gap: 8px; }
+    .select-btn { padding: 10px; border: 2px solid #e2e8f0; border-radius: 10px; background: white; font-weight: bold; cursor: pointer; }
+    .select-btn.active { background: #edf2f7; border-color: #4a5568; }
+    
+    .minute-buttons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 15px; }
+    .min-btn { padding: 12px; background: #edf2f7; border: none; border-radius: 8px; font-weight: bold; font-size: 1.1rem; cursor: pointer; }
+    .min-btn.active { background: #cbd5e0; }
+    
+    .action-btn { margin-top: 20px; width: 100%; padding: 14px; background: #48bb78; color: white; border: none; font-size: 1.2rem; font-weight: bold; border-radius: 10px; cursor: pointer; }
+    .close-modal { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.5rem; cursor: pointer; }
+    .settings-input { width: 100%; padding: 12px; margin: 15px 0; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 1rem; }
+  </style>
 </head>
 <body>
 
-    <!-- 1. APP HEADER -->
-    <header class="app-header">
-        <div class="legend-container">
-            <span class="legend-item papa"><i class="icon">🐨</i> Papa</span>
-            <span class="legend-item mama"><i class="icon">🐨</i> Mama</span>
-            <span class="legend-item oskar"><i class="icon">🐦</i> Oskar</span>
-            <span class="legend-item irma"><i class="icon">👧</i> Irma</span>
-            <span class="legend-item eltern"><i class="icon">🏠</i> Eltern / Allgemein</span>
+  <div class="top-bar">
+    <div class="legend">
+      <div class="member-tag tag-papa">Papa 👨</div>
+      <div class="member-tag tag-mama">Mama 👩</div>
+      <div class="member-tag tag-oskar">Oskar 👦</div>
+      <div class="member-tag tag-irma">Irma 👧</div>
+      <div class="member-tag tag-familie">Familien-Dashboard 🏠</div>
+    </div>
+    <button class="btn-settings" onclick="toggleModal('settings-modal', true)">⚙️</button>
+  </div>
+
+  <div class="energy-bar">
+    <div class="energy-card" style="border-bottom-color: var(--color-pv);">
+      <div class="label">Photovoltaik</div>
+      <div class="value" id="val-pv">5.2 kW</div>
+    </div>
+    <div class="energy-card" style="border-bottom-color: var(--color-bat);">
+      <div class="label">Batterie</div>
+      <div class="value" id="val-bat">78%</div>
+    </div>
+    <div class="energy-card" style="border-bottom-color: var(--color-home);">
+      <div class="label">Verbrauch</div>
+      <div class="value" id="val-home">0.8 kW</div>
+    </div>
+    <div class="energy-card" style="border-bottom-color: var(--color-grid);">
+      <div class="label">Netzeinspeisung</div>
+      <div class="value" id="val-grid">4.4 kW</div>
+    </div>
+    <div class="energy-card" style="border-bottom-color: #3182ce;">
+      <div class="label">Zappi Wallbox</div>
+      <div class="value" id="val-zappi">0.0 kW</div>
+    </div>
+    <div class="energy-card" style="border-bottom-color: #a0aec0;">
+      <div class="label">Shelly Status</div>
+      <div class="value" id="val-shelly">AUS</div>
+    </div>
+  </div>
+
+  <div class="planner-grid">
+    <div class="day-column">
+      <div class="day-header">
+        <h2>Heute</h2>
+        <span id="date-day0">--.--.</span>
+      </div>
+      <div class="event-list" id="events-day0">
+        <div class="event-item oskar">
+          <div class="event-time">14:30 - 15:30</div>
+          <div class="event-title">🎨 Zeichnen & Basteln</div>
         </div>
+      </div>
+    </div>
 
-        <div class="status-container">
-            <div id="sync-status" class="sync-status">Sync in: <span id="sync-countdown">00:00</span></div>
-            <div id="last-update" class="last-update">Stand: --:--:--</div>
-            <button id="btn-open-settings" class="btn-icon" aria-label="Einstellungen">⚙️</button>
-        </div>
-    </header>
-
-    <!-- 2. TELEMETRIE BAR -->
-    <section class="energy-shelly-bar">
-        <div class="energy-flow-container">
-            <div class="energy-node" id="node-pv">
-                <span class="label">☀️ PV-Dach</span>
-                <span class="value" id="val-pv">0.0 kW</span>
-                <span class="arrow" id="arrow-pv">➔</span>
-            </div>
-            <div class="energy-node" id="node-battery">
-                <span class="label">🐋 Speicher</span>
-                <span class="value" id="val-battery">0.0 kW</span>
-                <span class="arrow" id="arrow-battery">➔</span>
-            </div>
-            <div class="energy-node" id="node-house">
-                <span class="label">🏠 Haus</span>
-                <span class="value" id="val-house">0.0 kW</span>
-            </div>
-            <div class="energy-node" id="node-grid">
-                <span class="label">⚡ Netz</span>
-                <span class="value" id="val-grid">0.0 kW</span>
-                <span class="arrow" id="arrow-grid">➔</span>
-            </div>
-            <div class="energy-node" id="node-zappi">
-                <span class="label">🚗 Zappi Wallbox</span>
-                <span class="value" id="val-zappi">0.0 kW</span>
-            </div>
-        </div>
-
-        <div class="shelly-container" id="shelly-status-list">
-            <div class="shelly-item" id="shelly-oskar-light">
-                <span class="shelly-name">Licht Oskar:</span>
-                <span class="shelly-state badge-off">AUS</span>
-            </div>
-        </div>
-    </section>
-
-    <!-- 3. HAUPTBEREICH -->
-    <main class="planner-grid">
-        <section class="day-column" id="col-heute">
-            <h2 class="column-header">Heute <span class="date-sub" id="date-heute"></span></h2>
-            <div class="active-timers-bar" id="timers-heute"></div>
-            <div class="events-list" id="events-heute"></div>
-        </section>
-
-        <section class="day-column" id="col-morgen">
-            <h2 class="column-header">Morgen <span class="date-sub" id="date-morgen"></span></h2>
-            <div class="active-timers-bar" id="timers-morgen"></div>
-            <div class="events-list" id="events-morgen"></div>
-        </section>
-
-        <section class="day-column" id="col-uebermorgen">
-            <h2 class="column-header">Übermorgen <span class="date-sub" id="date-uebermorgen"></span></h2>
-            <div class="active-timers-bar" id="timers-uebermorgen"></div>
-            <div class="events-list" id="events-uebermorgen"></div>
-        </section>
-    </main>
-
-    <!-- 4. POPUP: AUFGABEN-TIMER -->
-    <script src="js/script.js"></script>
-</body>
-</html>
+    <div class="day-column">
+      <div class="day-header">
+        <h2>Morgen</h2>
+        <span id="date-day1">--.--.</span>
+      </div>
+      <div class="event-list" id="events-day1">
+        <div class="event-item familie">
+          <div class="event-time">17:00 - 18:00</div>
+          <div class="event-title">
