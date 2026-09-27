@@ -1,1 +1,102 @@
+/* ==========================================================================
+   MODUL: TASK TIMER STYLING (timer.css)
+   ========================================================================== */
 
+.timer-card {
+    background: white;
+    padding: 20px;
+    border-radius: 30px;
+    text-align: center;
+    max-width: 440px;
+    width: 90%;
+    position: relative;
+    border: 5px solid #d0e8ff;
+}
+
+.close-modal-btn {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+}
+
+.assignee-selector {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 10px 0;
+}
+
+.assign-btn {
+    padding: 6px 12px;
+    border-radius: 12px;
+    border: 2px solid #cbd5e1;
+    background: #f8fafc;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+}
+
+.assign-btn.active {
+    border-color: #3b82f6;
+    background: #dbeafe;
+}
+
+.display-img {
+    font-size: 3.5rem;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.clock-container {
+    display: flex;
+    justify-content: center;
+    margin: 10px 0;
+}
+
+.time-display {
+    font-size: 2.8rem;
+    font-weight: bold;
+    color: #334155;
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 4px;
+    border: 2px dashed #cbd5e1;
+    margin: 10px 0;
+}
+
+.start-btn {
+    background: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 100px;
+    height: 100px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 6px 0 #388e3c;
+}
+
+.start-btn:active {
+    transform: translateY(3px);
+    box-shadow: 0 3px 0 #388e3c;
+}
+
+.finish-btn {
+    background: #ff9800;
+    color: white;
+    border: none;
+    border-radius: 16px;
+    padding: 12px 24px;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: none;
+    box-shadow: 0 4px 0 #f57c00;
+}
