@@ -24,7 +24,9 @@ Projektarchitektur & Modul-DokumentationProjekt: Kindgerechter Familienplaner mi
 🔒 Sicherheits-, Performance- & ArchitekturkonzeptSicherheit (Serverless API Proxy):Keine API-Keys oder Zugangsdaten (Google OAuth Tokens, Sungrow/iSolarCloud Credentials, MyEnergi Zappi Credentials, Shelly Cloud Keys) im Client-Code.Sämtliche externe Abfragen laufen über Pipedream HTTP-Endpoints. Pipedream authentifiziert sich gegenüber den APIs und sendet ausschließlich gefilterte, anonymisierte JSON-Daten an GitHub Pages.CORS-Header in Pipedream schränken Zugriffe auf deine GitHub-Pages-Domain ein.Performance & Auto-Refresh:Der Client führt ein zeitgesteuertes Polling durch (z. B. Kalender alle 5 Minuten, Energiedaten alle 15 Sekunden).Die verbleibende Zeit bis zum nächsten Sync wird als Count-Down Timer in der Statusleiste angezeigt.UX & Kindgerechte Bedienung:Mindest-Touch-Flächen von $60 \times 60 \text{ px}$ für Kinderhände.Farblegende für Personen: Papa, Mama, Oskar, Irma, Eltern/Allgemein.Visueller analoger Timer (SVG mit abnehmendem roten Kreissegment) für intuitives Zeitverständnis (5–6 Jahre).
 
 Modul 1: index.html (Haupt-HTML-Gerüst)Das HTML-Gerüst definiert das 3-Spalten-Layout für den Kalender, den Header mit Farblegende/Statusleiste, das Energie-Dashboard und die Modals (Popups) für Aufgaben und Einstellungen.
-++Hier den Code einfügen++
+++
+Familienplaner & Dashboard
+++
 
 Modul 2: css/style.css (Styles & Responsive iPad/Mobile Layout)
 Das CSS ist modulweise gegliedert und nutzt CSS-Variablen für das konsistente Personen-Farbschema.
