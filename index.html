@@ -2,146 +2,199 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Familienplaner & Dashboard</title>
-    <link rel="stylesheet" href="css/style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Familienplaner & Energiefluss</title>
+    
+    <!-- Modulare CSS-Dateien -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/calendar.css">
+    <link rel="stylesheet" href="css/timer.css">
+    <link rel="stylesheet" href="css/energy.css">
+    <link rel="stylesheet" href="css/settings.css">
 </head>
 <body>
 
-    <!-- 1. APP HEADER -->
+    <!-- ==========================================
+         MODUL: HEADER & LEGENDE (MODULE_HEADER_LEGEND)
+         ========================================== -->
     <header class="app-header">
-        <div class="legend-container">
-            <span class="legend-item papa"><i class="icon">🐨</i> Papa</span>
-            <span class="legend-item mama"><i class="icon">🐨</i> Mama</span>
-            <span class="legend-item oskar"><i class="icon">🐦</i> Oskar</span>
-            <span class="legend-item irma"><i class="icon">👧</i> Irma</span>
-            <span class="legend-item eltern"><i class="icon">🏠</i> Eltern / Allgemein</span>
+        <div class="legend-bar">
+            <div class="person-tag person-papa" data-person="papa">
+                <span class="icon">👨</span> <span class="label">Papa</span>
+            </div>
+            <div class="person-tag person-mama" data-person="mama">
+                <span class="icon">👩</span> <span class="label">Mama</span>
+            </div>
+            <div class="person-tag person-oskar" data-person="oskar">
+                <span class="icon">👦</span> <span class="label">Oskar</span>
+            </div>
+            <div class="person-tag person-irma" data-person="irma">
+                <span class="icon">👧</span> <span class="label">Irma</span>
+            </div>
+            <div class="person-tag person-eltern" data-person="eltern">
+                <span class="icon">🏡</span> <span class="label">Familie</span>
+            </div>
         </div>
 
-        <div class="status-container">
-            <div id="sync-status" class="sync-status">Sync in: <span id="sync-countdown">00:00</span></div>
-            <div id="last-update" class="last-update">Stand: --:--:--</div>
-            <button id="btn-open-settings" class="btn-icon" aria-label="Einstellungen">⚙️</button>
+        <div class="header-controls">
+            <div class="refresh-status">
+                <span id="last-update-time">--:--</span> |
+                <span id="refresh-countdown">60s</span> 🔄
+            </div>
+            <button id="menu-btn" class="icon-btn" onclick="toggleSettingsModal()">⚙️</button>
         </div>
     </header>
 
-    <!-- 2. TELEMETRIE BAR -->
-    <section class="energy-shelly-bar">
-        <div class="energy-flow-container">
-            <div class="energy-node" id="node-pv">
-                <span class="label">☀️ PV-Dach</span>
-                <span class="value" id="val-pv">0.0 kW</span>
-                <span class="arrow" id="arrow-pv">➔</span>
-            </div>
-            <div class="energy-node" id="node-battery">
-                <span class="label">🐋 Speicher</span>
-                <span class="value" id="val-battery">0.0 kW</span>
-                <span class="arrow" id="arrow-battery">➔</span>
-            </div>
-            <div class="energy-node" id="node-house">
-                <span class="label">🏠 Haus</span>
-                <span class="value" id="val-house">0.0 kW</span>
-            </div>
-            <div class="energy-node" id="node-grid">
-                <span class="label">⚡ Netz</span>
-                <span class="value" id="val-grid">0.0 kW</span>
-                <span class="arrow" id="arrow-grid">➔</span>
-            </div>
-            <div class="energy-node" id="node-zappi">
-                <span class="label">🚗 Zappi Wallbox</span>
-                <span class="value" id="val-zappi">0.0 kW</span>
-            </div>
+    <!-- ==========================================
+         MODUL: ENERGIEFLUSS (MODULE_ENERGY_SHELLY)
+         ========================================== -->
+    <section class="energy-bar-container">
+        <div class="energy-item" id="node-pv">
+            <span class="energy-icon">☀️ Dach</span>
+            <span class="energy-value"><span id="val-pv">0.0</span> kW</span>
+            <span class="arrow arrow-green" id="arrow-pv">⬇️</span>
         </div>
-
-        <div class="shelly-container" id="shelly-status-list">
-            <div class="shelly-item" id="shelly-oskar-light">
-                <span class="shelly-name">Licht Oskar:</span>
-                <span class="shelly-state badge-off">AUS</span>
-            </div>
+        <div class="energy-item" id="node-battery">
+            <span class="energy-icon">🔋 Speicher</span>
+            <span class="energy-value"><span id="val-battery">0.0</span> kW</span>
+            <span class="arrow" id="arrow-battery">➡️</span>
+        </div>
+        <div class="energy-item" id="node-house">
+            <span class="energy-icon">🏠 Haus</span>
+            <span class="energy-value"><span id="val-house">0.0</span> kW</span>
+            <span class="arrow arrow-red" id="arrow-house">➡️</span>
+        </div>
+        <div class="energy-item" id="node-grid">
+            <span class="energy-icon">⚡ Netz</span>
+            <span class="energy-value"><span id="val-grid">0.0</span> kW</span>
+            <span class="arrow" id="arrow-grid">⬅️</span>
+        </div>
+        <div class="energy-item" id="node-zappi">
+            <span class="energy-icon">🚗 Zappi</span>
+            <span class="energy-value"><span id="val-zappi">0.0</span> kW</span>
+            <span class="arrow arrow-red" id="arrow-zappi">➡️</span>
+        </div>
+        <div class="shelly-status-item" id="shelly-oskar-light">
+            <span class="shelly-icon">💡 Oskar:</span>
+            <span class="shelly-badge badge-off" id="shelly-status">AUS</span>
         </div>
     </section>
 
-    <!-- 3. HAUPTBEREICH: 3-SPALTEN-PLANER MIT KINDER-AUFGABEN -->
+    <!-- ==========================================
+         MODUL: 3-TAGE PLANER (MODULE_CALENDAR)
+         ========================================== -->
     <main class="planner-grid">
-        
-        <!-- SPALTE: HEUTE -->
-        <section class="day-column" id="col-heute">
-            <h2 class="column-header">Heute <span class="date-sub" id="date-heute"></span></h2>
-            <div class="active-timers-bar" id="timers-heute"></div>
-            
-            <div class="events-list" id="events-heute">
-                
-                <!-- Aufgaben-Modul Oskar -->
-                <article class="task-card person-oskar" data-person="oskar">
-                    <header class="task-card-header">
-                        <span class="person-badge"><i class="icon">🐦</i> Oskar</span>
-                        <span class="task-time">17:00</span>
-                    </header>
-                    <div class="task-card-body">
-                        <h3 class="task-title">Zimmer aufräumen</h3>
-                        <p class="task-desc">Lego & Bausteine in die Kisten sortieren</p>
-                    </div>
-                    <footer class="task-card-actions">
-                        <button class="btn-action btn-start-timer" data-duration="15">⏱️ 15 Min. Timer</button>
-                        <button class="btn-action btn-complete">✅ Erledigt</button>
-                    </footer>
-                </article>
-
-                <!-- Aufgaben-Modul Irma -->
-                <article class="task-card person-irma" data-person="irma">
-                    <header class="task-card-header">
-                        <span class="person-badge"><i class="icon">👧</i> Irma</span>
-                        <span class="task-time">18:00</span>
-                    </header>
-                    <div class="task-card-body">
-                        <h3 class="task-title">Zähne putzen</h3>
-                        <p class="task-desc">3 Minuten Sanduhr nutzen</p>
-                    </div>
-                    <footer class="task-card-actions">
-                        <button class="btn-action btn-start-timer" data-duration="3">⏱️ 3 Min. Timer</button>
-                        <button class="btn-action btn-complete">✅ Erledigt</button>
-                    </footer>
-                </article>
-
+        <!-- Spalte Heute -->
+        <div class="day-column" id="col-today">
+            <div class="column-header">
+                <h2>Heute</h2>
+                <span class="date-str" id="date-today">--.--.</span>
             </div>
-        </section>
-
-        <!-- SPALTE: MORGEN -->
-        <section class="day-column" id="col-morgen">
-            <h2 class="column-header">Morgen <span class="date-sub" id="date-morgen"></span></h2>
-            <div class="active-timers-bar" id="timers-morgen"></div>
-            <div class="events-list" id="events-morgen">
-                <!-- Dynamischer Influx / JS-Render-Bereich für morgige Aufgaben -->
-            </div>
-        </section>
-
-        <!-- SPALTE: ÜBERMORGEN -->
-        <section class="day-column" id="col-uebermorgen">
-            <h2 class="column-header">Übermorgen <span class="date-sub" id="date-uebermorgen"></span></h2>
-            <div class="active-timers-bar" id="timers-uebermorgen"></div>
-            <div class="events-list" id="events-uebermorgen">
-                <!-- Dynamischer Influx / JS-Render-Bereich für übermorgige Aufgaben -->
-            </div>
-        </section>
-
-    </main>
-
-    <!-- 4. POPUP: AUFGABEN-TIMER MODAL -->
-    <dialog id="timer-modal" class="timer-modal">
-        <div class="modal-content">
-            <button id="btn-close-modal" class="btn-close">&times;</button>
-            <h3 id="modal-task-title">Timer läuft...</h3>
-            <div class="timer-display">
-                <div class="analog-clock" id="analog-clock"></div>
-                <div class="digital-clock" id="digital-clock">00:00</div>
-            </div>
-            <div class="modal-controls">
-                <button id="btn-pause-timer" class="btn">Pause</button>
-                <button id="btn-stop-timer" class="btn btn-danger">Abbrechen</button>
+            <div class="events-container" id="events-today">
+                <!-- Dynamisch befüllt -->
             </div>
         </div>
-    </dialog>
 
-    <script src="js/script.js"></script>
+        <!-- Spalte Morgen -->
+        <div class="day-column" id="col-tomorrow">
+            <div class="column-header">
+                <h2>Morgen</h2>
+                <span class="date-str" id="date-tomorrow">--.--.</span>
+            </div>
+            <div class="events-container" id="events-tomorrow">
+                <!-- Dynamisch befüllt -->
+            </div>
+        </div>
+
+        <!-- Spalte Übermorgen -->
+        <div class="day-column" id="col-after-tomorrow">
+            <div class="column-header">
+                <h2>Übermorgen</h2>
+                <span class="date-str" id="date-after-tomorrow">--.--.</span>
+            </div>
+            <div class="events-container" id="events-after-tomorrow">
+                <!-- Dynamisch befüllt -->
+            </div>
+        </div>
+    </main>
+
+    <!-- ==========================================
+         MODUL: TASK TIMER POPUP / MODAL (MODULE_TASKS_TIMER)
+         ========================================== -->
+    <div class="modal-overlay" id="timer-modal">
+        <div class="timer-card">
+            <button class="close-modal-btn" onclick="closeTimerModal()">✕</button>
+            <h2 id="timer-task-title">Aufgabe starten</h2>
+
+            <!-- Personenzuordnung -->
+            <div class="assignee-selector">
+                <button class="assign-btn active" id="assign-oskar" onclick="setTimerAssignee('oskar')">👦 Oskar</button>
+                <button class="assign-btn" id="assign-irma" onclick="setTimerAssignee('irma')">👧 Irma</button>
+            </div>
+            
+            <!-- Themen-Auswahl -->
+            <div class="themes">
+                <button class="btn active" id="tBtn1" onclick="changeTheme('🎨', 1)">🎨 Aufräumen</button>
+                <button class="btn" id="tBtn2" onclick="changeTheme('🪥', 2)">🪥 Zähneputzen</button>
+                <button class="btn" id="tBtn3" onclick="changeTheme('👕', 3)">👕 Anziehen</button>
+            </div>
+
+            <div class="display-img" id="tImg">🎨</div>
+
+            <!-- Zeitauswahl -->
+            <div class="times">
+                <button class="btn" id="mBtn5" onclick="changeTime(5)">5 Min</button>
+                <button class="btn active" id="mBtn10" onclick="changeTime(10)">10 Min</button>
+                <button class="btn" id="mBtn15" onclick="changeTime(15)">15 Min</button>
+                <button class="btn" id="mBtn30" onclick="changeTime(30)">30 Min</button>
+                <button class="btn" id="mBtn45" onclick="changeTime(45)">45 Min</button>
+                <button class="btn" id="mBtn60" onclick="changeTime(60)">1 Std</button>
+            </div>
+
+            <!-- Visual Timer Canvas -->
+            <div class="clock-container">
+                <canvas id="clock" width="200" height="200"></canvas>
+            </div>
+
+            <div class="time-display" id="disp">10:00</div>
+
+            <!-- Start / Finish Controls -->
+            <div class="timer-actions">
+                <button class="start-btn" id="sBtn" onclick="startTimer()">START!</button>
+                <button class="finish-btn" id="fBtn" onclick="finishTimer(true)">FERTIG! 🎉</button>
+            </div>
+            
+            <button class="reset-btn" onclick="resetTimer()">Reset 🔄</button>
+        </div>
+    </div>
+
+    <!-- Feedback Popup -->
+    <div class="popup-overlay" id="feedback-pop">
+        <div class="popup-content">
+            <div class="popup-img" id="pImg">🚀</div>
+            <div class="popup-title" id="pTit">Super gemacht!</div>
+            <button class="btn" onclick="closeFeedbackPop()">Nochmal 🔄</button>
+        </div>
+    </div>
+
+    <!-- Einstellungen Modal (MODULE_SETTINGS_PIPEDREAM) -->
+    <div class="modal-overlay" id="settings-modal">
+        <div class="settings-card">
+            <h2>⚙️ Einstellungen</h2>
+            <div class="setting-group">
+                <label>Pipedream Base URL:</label>
+                <input type="text" id="pipedream-url" placeholder="https://endpoint.pipedream.net/..." />
+            </div>
+            <button class="btn" onclick="saveSettings()">Speichern</button>
+            <button class="reset-btn" onclick="toggleSettingsModal()">Schließen</button>
+        </div>
+    </div>
+
+    <!-- Scripte -->
+    <script src="js/api.js"></script>
+    <script src="js/calendar.js"></script>
+    <script src="js/timer.js"></script>
+    <script src="js/energy.js"></script>
+    <script src="js/app.js"></script>
 </body>
 </html>
