@@ -1,1 +1,54 @@
+/* ==========================================================================
+   MODUL: ENERGY & SHELLY STYLING (energy.css)
+   ========================================================================== */
 
+.energy-bar-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--card-bg);
+    padding: 8px 16px;
+    border-radius: 16px;
+    margin-bottom: 10px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.energy-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.energy-value {
+    color: #334155;
+    background: #f1f5f9;
+    padding: 2px 8px;
+    border-radius: 8px;
+}
+
+.arrow {
+    font-size: 1.1rem;
+}
+
+.arrow-green { color: var(--color-success); }
+.arrow-red { color: var(--color-danger); }
+
+.shelly-status-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border-left: 2px solid #e2e8f0;
+    padding-left: 12px;
+}
+
+.shelly-badge {
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.8rem;
+    color: white;
+}
+
+.badge-on { background-color: var(--color-danger); } /* Licht an = Aufmerksamkeit */
+.badge-off { background-color: var(--color-success); }
