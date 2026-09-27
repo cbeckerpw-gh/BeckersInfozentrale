@@ -8,9 +8,7 @@
 </head>
 <body>
 
-    <!-- ==========================================================================
-         1. APP HEADER: PERSONEN-LEGENDE & SYNC-STATUS
-         ========================================================================== -->
+    <!-- 1. APP HEADER -->
     <header class="app-header">
         <div class="legend-container">
             <span class="legend-item papa"><i class="icon">🐨</i> Papa</span>
@@ -27,9 +25,7 @@
         </div>
     </header>
 
-    <!-- ==========================================================================
-         2. TELEMETRIE BAR: ENERGIEFLUSS & SHELLY STATUS
-         ========================================================================== -->
+    <!-- 2. TELEMETRIE BAR -->
     <section class="energy-shelly-bar">
         <div class="energy-flow-container">
             <div class="energy-node" id="node-pv">
@@ -38,7 +34,7 @@
                 <span class="arrow" id="arrow-pv">➔</span>
             </div>
             <div class="energy-node" id="node-battery">
-                <span class="label">🐳 Speicher</span>
+                <span class="label">🐋 Speicher</span>
                 <span class="value" id="val-battery">0.0 kW</span>
                 <span class="arrow" id="arrow-battery">➔</span>
             </div>
@@ -65,9 +61,7 @@
         </div>
     </section>
 
-    <!-- ==========================================================================
-         3. HAUPTBEREICH: 3-SPALTEN-PLANER (HEUTE, MORGEN, ÜBERMORGEN)
-         ========================================================================== -->
+    <!-- 3. HAUPTBEREICH -->
     <main class="planner-grid">
         <section class="day-column" id="col-heute">
             <h2 class="column-header">Heute <span class="date-sub" id="date-heute"></span></h2>
@@ -88,6 +82,7 @@
         </section>
     </main>
 
-    <!-- ==========================================================================
-         4. POPUP: KINDGERECHTER AUFGABEN-TIMER (ANALOG + DIGITAL)
-         ========================================================================== -->
+    <!-- 4. POPUP: AUFGABEN-TIMER -->
+    <script src="js/script.js"></script>
+</body>
+</html>
