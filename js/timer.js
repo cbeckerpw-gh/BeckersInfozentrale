@@ -72,22 +72,23 @@ const TimerModule = (function () {
      * Liest das Erstellungs-Formular aus und generiert die Timer-Karten
      */
     function createTimersFromForm() {
-        const personKey = getSelectedValue('group-person');
-        const topicKey = getSelectedValue('group-topic');
-        const durationMin = parseInt(getSelectedValue('group-duration'), 10);
-        const dayKey = getSelectedValue('group-day');
-        const repeatCount = parseInt(getSelectedValue('group-repeat'), 10);
+        const personKey = getSelectedValue('group-person') || 'oskar';
+        const topicKey = getSelectedValue('group-topic') || 'zahne';
+        const durationMin = parseInt(getSelectedValue('group-duration') || '5', 10);
+        const dayKey = getSelectedValue('group-day') || 'today';
+        const repeatCount = parseInt(getSelectedValue('group-repeat') || '1', 10);
 
         // Tage ermitteln, in die eingefügt werden soll
         const targetDays = dayKey === 'all' ? ['today', 'tomorrow', 'after-tomorrow'] : [dayKey];
 
         targetDays.forEach(day => {
             for (let i = 1; i <= repeatCount; i++) {
-                const repeatLabel = repeatCount > 1 ? ` (\({i}/\){repeatCount})` : '';
+                const repeatLabel = repeatCount > 1 ? ' (' + i + '/' + repeatCount + ')' : '';
                 const timerObj = {
                     id: 'timer-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
                     personKey,
                     topicKey,
+                    durationMin,
                     durationSec: durationMin * 60,
                     remainingSec: durationMin * 60,
                     repeatLabel,
@@ -131,11 +132,11 @@ const TimerModule = (function () {
                 '</div>' +
                 '<div class="timer-details">' +
                     '<span class="timer-title">' + person.name + ' - ' + topic.name + timer.repeatLabel + '</span>' +
-                    '<span class="timer-subtext" id="time-text-' + timer.id + '">' + Math.ceil(timer.durationSec / 60) + ' Min</span>' +
+                    '<span class="timer-subtext" id="time-text-' + timer.id + '">' + Math.ceil(timer.remainingSec / 60) + ' Min</span>' +
                 '</div>' +
             '</div>' +
             '<div class="analog-clock-container" id="clock-' + timer.id + '">' +
-                generateClockSVG(1) +
+                generateClockSVG(timer.remainingSec) +
             '</div>' +
             '<button class="btn btn-success" id="btn-action-' + timer.id + '">Start</button>';
 
@@ -178,8 +179,7 @@ const TimerModule = (function () {
         timer.intervalId = setInterval(() => {
             timer.remainingSec--;
 
-            const progressRatio = timer.remainingSec / timer.durationSec;
-            updateClockSVG(timer.id, progressRatio, timer.remainingSec);
+            updateClockSVG(timer.id, timer.remainingSec);
 
             if (timer.remainingSec <= 0) {
                 // Zeit abgelaufen ohne Fertigmeldung
@@ -192,18 +192,26 @@ const TimerModule = (function () {
     }
 
     /**
-     * Erzeugt das SVG der Analoguhr mit rotem Kreissegment für die Restzeit
+     * Erzeugt das SVG der Analoguhr.
+     * Basierend auf echten Minuten (60 Min = 360 Grad / Vollkreis).
+     * Beispiel: 5 Min Restzeit = 30 Grad rotes Kuchenstück.
      */
-    function generateClockSVG(ratio) {
-        const angle = ratio * 360;
+    function generateClockSVG(remainingSec) {
+        const remainingMin = remainingSec / 60;
+        // 60 Minuten entspricht 360 Grad, also 1 Minute = 6 Grad
+        const angle = Math.min(360, Math.max(0, remainingMin * 6));
+
         const radians = (angle - 90) * (Math.PI / 180);
         const x = 25 + 20 * Math.cos(radians);
         const y = 25 + 20 * Math.sin(radians);
         const largeArc = angle > 180 ? 1 : 0;
 
-        const pathData = angle <= 0 ? '' : (angle >= 359.9 ? 
-            'M 25 5 A 20 20 0 1 1 24.99 5 Z' : 
-            'M 25 25 L 25 5 A 20 20 0 ' + largeArc + ' 1 ' + x + ' ' + y + ' Z');
+        let pathData = '';
+        if (angle >= 359.9) {
+            pathData = 'M 25 5 A 20 20 0 1 1 24.99 5 Z';
+        } else if (angle > 0) {
+            pathData = 'M 25 25 L 25 5 A 20 20 0 ' + largeArc + ' 1 ' + x + ' ' + y + ' Z';
+        }
 
         return '<svg class="analog-clock-svg" viewBox="0 0 50 50">' +
                 '<circle class="clock-face" cx="25" cy="25" r="20" />' +
@@ -215,12 +223,12 @@ const TimerModule = (function () {
     /**
      * Aktualisiert die Uhr auf der Karte im Sekundentakt
      */
-    function updateClockSVG(timerId, ratio, remainingSec) {
+    function updateClockSVG(timerId, remainingSec) {
         const clockContainer = document.getElementById('clock-' + timerId);
         const timeText = document.getElementById('time-text-' + timerId);
         
         if (clockContainer) {
-            clockContainer.innerHTML = generateClockSVG(Math.max(0, ratio));
+            clockContainer.innerHTML = generateClockSVG(remainingSec);
         }
 
         if (timeText) {
