@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Familienplaner & Energiefluss</title>
+    <title>Familienplaner &amp; Energiefluss</title>
     
-    <!-- Einbinden der modularen CSS-Dateien -->
+    <!-- Modulare CSS-Dateien -->
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/calendar.css">
     <link rel="stylesheet" href="css/energy.css">
@@ -14,11 +14,120 @@
 </head>
 <body>
 
-    <!-- Hauptbereich für Modulinhalte -->
+    <!-- Header-Bereich -->
+    <header class="app-header">
+        <h1>Beckers Infozentrale</h1>
+        <div id="status-bar" class="status-bar">
+            <span id="connection-status" class="status-online">Verbunden</span>
+        </div>
+    </header>
+
+    <!-- Hauptbereich: Aufgabentimer Modul -->
     <main id="app-container" class="app-container">
+        <section id="timer-module" class="timer-module">
+            <div class="timer-module-header">
+                <h2>⏱️ Aufgabentimer</h2>
+                <button id="btn-open-timer-modal" class="btn btn-primary">+ Neuer Timer</button>
+            </div>
+
+            <!-- 3-Spalten-Layout für Heute, Morgen, Übermorgen -->
+            <div class="timer-columns-grid">
+                <div class="timer-column" id="col-today">
+                    <h3 class="column-title">📅 Heute</h3>
+                    <div class="timer-card-list" id="list-today"></div>
+                </div>
+
+                <div class="timer-column" id="col-tomorrow">
+                    <h3 class="column-title">📅 Morgen</h3>
+                    <div class="timer-card-list" id="list-tomorrow"></div>
+                </div>
+
+                <div class="timer-column" id="col-after-tomorrow">
+                    <h3 class="column-title">📅 Übermorgen</h3>
+                    <div class="timer-card-list" id="list-after-tomorrow"></div>
+                </div>
+            </div>
+        </section>
     </main>
 
-    <!-- Einbinden der JavaScript-Dateien -->
+    <!-- Modal: Timer erstellen -->
+    <div id="timer-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Neue Timeraufgabe erstellen</h3>
+                <button id="btn-close-modal" class="btn-icon">✖</button>
+            </div>
+
+            <form id="timer-form" class="timer-form">
+                <!-- 1. Personenauswahl -->
+                <div class="form-group">
+                    <label>Person auswählen:</label>
+                    <div class="select-group" id="group-person">
+                        <button type="button" class="btn-select active" data-value="oskar">👦 Oskar</button>
+                        <button type="button" class="btn-select" data-value="irma">👧 Irma</button>
+                    </div>
+                </div>
+
+                <!-- 2. Themenauswahl -->
+                <div class="form-group">
+                    <label>Thema auswälen:</label>
+                    <div class="select-group" id="group-topic">
+                        <button type="button" class="btn-select active" data-value="zahne">🪥 Zähneputzen</button>
+                        <button type="button" class="btn-select" data-value="anziehen">👕 Anziehen</button>
+                        <button type="button" class="btn-select" data-value="aufraumen">🧸 Aufräumen</button>
+                    </div>
+                </div>
+
+                <!-- 3. Zeitauswahl -->
+                <div class="form-group">
+                    <label>Dauer wählen:</label>
+                    <div class="select-group" id="group-duration">
+                        <button type="button" class="btn-select active" data-value="5">5 Min</button>
+                        <button type="button" class="btn-select" data-value="10">10 Min</button>
+                        <button type="button" class="btn-select" data-value="15">15 Min</button>
+                        <button type="button" class="btn-select" data-value="30">30 Min</button>
+                        <button type="button" class="btn-select" data-value="45">45 Min</button>
+                        <button type="button" class="btn-select" data-value="60">60 Min</button>
+                    </div>
+                </div>
+
+                <!-- 4. Tag / Spaltenauswahl -->
+                <div class="form-group">
+                    <label>Tag / Zeitraum:</label>
+                    <div class="select-group" id="group-day">
+                        <button type="button" class="btn-select active" data-value="today">Heute</button>
+                        <button type="button" class="btn-select" data-value="tomorrow">Morgen</button>
+                        <button type="button" class="btn-select" data-value="after-tomorrow">Übermorgen</button>
+                        <button type="button" class="btn-select" data-value="all">Alle 3 Tage</button>
+                    </div>
+                </div>
+
+                <!-- 5. Wiederholung pro Tag -->
+                <div class="form-group">
+                    <label>Wiederholungen pro Tag:</label>
+                    <div class="select-group" id="group-repeat">
+                        <button type="button" class="btn-select active" data-value="1">1x täglich</button>
+                        <button type="button" class="btn-select" data-value="2">2x täglich</button>
+                        <button type="button" class="btn-select" data-value="3">3x täglich</button>
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-success btn-full">Timer erstellen</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Ergebnis-Popup (Erfolg / Zeit abgelaufen) -->
+    <div id="result-modal" class="modal-overlay hidden">
+        <div class="modal-content result-content">
+            <div id="result-icon" class="result-icon"></div>
+            <h3 id="result-title"></h3>
+            <p id="result-text"></p>
+            <button id="btn-close-result" class="btn btn-primary">Super!</button>
+        </div>
+    </div>
+
+    <!-- JavaScript-Dateien -->
     <script src="js/api.js"></script>
     <script src="js/calendar.js"></script>
     <script src="js/energy.js"></script>
