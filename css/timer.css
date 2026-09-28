@@ -49,6 +49,15 @@
     align-items: center;
     justify-content: space-between;
     box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    position: relative;
+    transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+/* Ausgegrauter Zustand bei abgelaufenem Timer */
+.timer-card.failed {
+    opacity: 0.55;
+    filter: grayscale(40%);
+    border: 1px solid #d32f2f;
 }
 
 .timer-info {
@@ -105,12 +114,6 @@
     fill: #ffffff;
 }
 
-.clock-hand {
-    stroke: #ffffff;
-    stroke-width: 2;
-    stroke-linecap: round;
-}
-
 /* Interaktive Buttons */
 .btn {
     padding: 8px 16px;
@@ -138,6 +141,12 @@
 .btn-warning {
     background-color: #ff9800;
     color: #fff;
+}
+
+.btn-failed {
+    background-color: #d32f2f;
+    color: #fff;
+    cursor: not-allowed;
 }
 
 .btn-full {
