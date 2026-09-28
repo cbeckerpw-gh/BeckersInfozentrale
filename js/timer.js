@@ -93,7 +93,7 @@ const TimerModule = (function () {
                     remainingSec: durationMin * 60,
                     repeatLabel,
                     day,
-                    status: 'ready', // ready, running, finished
+                    status: 'ready', // ready, running, finished, failed
                     intervalId: null
                 };
                 timers.push(timerObj);
@@ -152,7 +152,7 @@ const TimerModule = (function () {
      */
     function handleTimerAction(timerId) {
         const timer = timers.find(t => t.id === timerId);
-        if (!timer) return;
+        if (!timer || timer.status === 'failed') return;
 
         const actionBtn = document.getElementById('btn-action-' + timerId);
 
@@ -182,11 +182,12 @@ const TimerModule = (function () {
             updateClockSVG(timer.id, timer.remainingSec);
 
             if (timer.remainingSec <= 0) {
-                // Zeit abgelaufen ohne Fertigmeldung
+                // Zeit abgelaufen ohne Fertigmeldung -> Nicht geschafft
                 clearInterval(timer.intervalId);
-                timer.status = 'finished';
-                showResultPopup('❌', 'Zeit abgelaufen!', 'Die Zeit für "' + TOPICS[timer.topicKey].name + '" ist leider um.');
-                removeTimerCard(timer.id);
+                timer.status = 'failed';
+                
+                showResultPopup('❌', 'Zeit abgelaufen!', PERSONS[timer.personKey].name + ' hat die Aufgabe "' + TOPICS[timer.topicKey].name + '" leider nicht rechtzeitig geschafft.');
+                markTimerAsFailed(timer.id);
             }
         }, 1000);
     }
@@ -194,11 +195,17 @@ const TimerModule = (function () {
     /**
      * Erzeugt das SVG der Analoguhr.
      * Basierend auf echten Minuten (60 Min = 360 Grad / Vollkreis).
-     * Beispiel: 5 Min Restzeit = 30 Grad rotes Kuchenstück.
      */
-    function generateClockSVG(remainingSec) {
+    function generateClockSVG(remainingSec, isFailed = false) {
+        if (isFailed) {
+            // Rotes Kreuz Overlay bei abgelaufenem Timer
+            return '<svg class="analog-clock-svg" viewBox="0 0 50 50">' +
+                    '<circle class="clock-face" cx="25" cy="25" r="20" />' +
+                    '<path d="M 15 15 L 35 35 M 35 15 L 15 35" stroke="#d32f2f" stroke-width="4" stroke-linecap="round" />' +
+                '</svg>';
+        }
+
         const remainingMin = remainingSec / 60;
-        // 60 Minuten entspricht 360 Grad, also 1 Minute = 6 Grad
         const angle = Math.min(360, Math.max(0, remainingMin * 6));
 
         const radians = (angle - 90) * (Math.PI / 180);
@@ -239,6 +246,34 @@ const TimerModule = (function () {
     }
 
     /**
+     * Wandelt die Timerkarte bei Ablauf visuell in eine nicht bestandene Karte um
+     */
+    function markTimerAsFailed(timerId) {
+        const card = document.getElementById(timerId);
+        const actionBtn = document.getElementById('btn-action-' + timerId);
+        const clockContainer = document.getElementById('clock-' + timerId);
+        const timeText = document.getElementById('time-text-' + timerId);
+
+        if (card) {
+            card.classList.add('failed');
+        }
+
+        if (actionBtn) {
+            actionBtn.textContent = 'Ablauf';
+            actionBtn.className = 'btn btn-failed';
+            actionBtn.disabled = true;
+        }
+
+        if (clockContainer) {
+            clockContainer.innerHTML = generateClockSVG(0, true);
+        }
+
+        if (timeText) {
+            timeText.textContent = 'Abgelaufen';
+        }
+    }
+
+    /**
      * Öffnet das Ergebnis-Popup (Erfolg/Fehlgeschlagen)
      */
     function showResultPopup(icon, title, text) {
@@ -249,7 +284,7 @@ const TimerModule = (function () {
     }
 
     /**
-     * Entfernt eine Timerkarte nach Fertigstellung aus dem DOM
+     * Entfernt eine Timerkarte nach erfolgreicher Fertigstellung aus dem DOM
      */
     function removeTimerCard(timerId) {
         const card = document.getElementById(timerId);
