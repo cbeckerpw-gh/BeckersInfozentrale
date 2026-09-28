@@ -13,3 +13,16 @@ Ein serverloses, hochsicheres Dashboard optimiert für GitHub Pages, ausgelegt f
 1. Repository klonen und Struktur auf GitHub Pages aufrufen.
 2. In Pipedream einen Endpoint einrichten und die generierte URL in den Einstellungen der Web-App unter `⚙️` eintragen.
 3. Die Seite auf dem iPad im Kiosk-Modus / Safari zum Home-Bildschirm hinzufügen.
+
+## Module
+
+### 1. Aufgabentimer (`timer.js` / `timer.css`)
+- **Funktion**: Erzeugt dynamisch interaktive Timer für Aufgaben im Familienalltag (Zähneputzen, Anziehen, Aufräumen).
+- **Layout**: 3-Spalten-Uebersicht (*Heute*, *Morgen*, *Übermorgen*).
+- **Visualisierung**: Restzeitanzeige in Form einer visuellen SVG-Analoguhr mit schrumpfendem rotem Kreissegment.
+- **Interaktion**: 
+  - Status *Bereit* -> Grüner Start-Button.
+  - Status *Laufend* -> Oranger Fertig-Button.
+  - Vorzeitige Abgabe -> Erfolgs-Popup mit **🚀 Raketen-Icon**.
+  - Zeitablauf ohne Abgabe -> Info-Popup mit **❌ rotem Kreuz**.
+- **Erstellung**: Einstellungen über Modal-Dialog für Person (Oskar, Irma), Thema, Dauer, Zieltag und Wiederholungsanzahl.
