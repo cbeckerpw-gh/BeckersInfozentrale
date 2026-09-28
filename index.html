@@ -5,196 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Familienplaner & Energiefluss</title>
     
-    <!-- Modulare CSS-Dateien -->
+    <!-- Einbinden der modularen CSS-Dateien -->
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/calendar.css">
-    <link rel="stylesheet" href="css/timer.css">
     <link rel="stylesheet" href="css/energy.css">
+    <link rel="stylesheet" href="css/timer.css">
     <link rel="stylesheet" href="css/settings.css">
 </head>
 <body>
 
-    <!-- ==========================================
-         MODUL: HEADER & LEGENDE (MODULE_HEADER_LEGEND)
-         ========================================== -->
-    <header class="app-header">
-        <div class="legend-bar">
-            <div class="person-tag person-papa" data-person="papa">
-                <span class="icon">👨</span> <span class="label">Papa</span>
-            </div>
-            <div class="person-tag person-mama" data-person="mama">
-                <span class="icon">👩</span> <span class="label">Mama</span>
-            </div>
-            <div class="person-tag person-oskar" data-person="oskar">
-                <span class="icon">👦</span> <span class="label">Oskar</span>
-            </div>
-            <div class="person-tag person-irma" data-person="irma">
-                <span class="icon">👧</span> <span class="label">Irma</span>
-            </div>
-            <div class="person-tag person-eltern" data-person="eltern">
-                <span class="icon">🏡</span> <span class="label">Familie</span>
-            </div>
-        </div>
-
-        <div class="header-controls">
-            <div class="refresh-status">
-                <span id="last-update-time">--:--</span> |
-                <span id="refresh-countdown">60s</span> 🔄
-            </div>
-            <button id="menu-btn" class="icon-btn" onclick="toggleSettingsModal()">⚙️</button>
-        </div>
-    </header>
-
-    <!-- ==========================================
-         MODUL: ENERGIEFLUSS (MODULE_ENERGY_SHELLY)
-         ========================================== -->
-    <section class="energy-bar-container">
-        <div class="energy-item" id="node-pv">
-            <span class="energy-icon">☀️ Dach</span>
-            <span class="energy-value"><span id="val-pv">0.0</span> kW</span>
-            <span class="arrow arrow-green" id="arrow-pv">⬇️</span>
-        </div>
-        <div class="energy-item" id="node-battery">
-            <span class="energy-icon">🔋 Speicher</span>
-            <span class="energy-value"><span id="val-battery">0.0</span> kW</span>
-            <span class="arrow" id="arrow-battery">➡️</span>
-        </div>
-        <div class="energy-item" id="node-house">
-            <span class="energy-icon">🏠 Haus</span>
-            <span class="energy-value"><span id="val-house">0.0</span> kW</span>
-            <span class="arrow arrow-red" id="arrow-house">➡️</span>
-        </div>
-        <div class="energy-item" id="node-grid">
-            <span class="energy-icon">⚡ Netz</span>
-            <span class="energy-value"><span id="val-grid">0.0</span> kW</span>
-            <span class="arrow" id="arrow-grid">⬅️</span>
-        </div>
-        <div class="energy-item" id="node-zappi">
-            <span class="energy-icon">🚗 Zappi</span>
-            <span class="energy-value"><span id="val-zappi">0.0</span> kW</span>
-            <span class="arrow arrow-red" id="arrow-zappi">➡️</span>
-        </div>
-        <div class="shelly-status-item" id="shelly-oskar-light">
-            <span class="shelly-icon">💡 Oskar:</span>
-            <span class="shelly-badge badge-off" id="shelly-status">AUS</span>
-        </div>
-    </section>
-
-    <!-- ==========================================
-         MODUL: 3-TAGE PLANER (MODULE_CALENDAR)
-         ========================================== -->
-    <main class="planner-grid">
-        <!-- Spalte Heute -->
-        <div class="day-column" id="col-today">
-            <div class="column-header">
-                <h2>Heute</h2>
-                <span class="date-str" id="date-today">--.--.</span>
-            </div>
-            <div class="events-container" id="events-today">
-                <!-- Dynamisch befüllt -->
-            </div>
-        </div>
-
-        <!-- Spalte Morgen -->
-        <div class="day-column" id="col-tomorrow">
-            <div class="column-header">
-                <h2>Morgen</h2>
-                <span class="date-str" id="date-tomorrow">--.--.</span>
-            </div>
-            <div class="events-container" id="events-tomorrow">
-                <!-- Dynamisch befüllt -->
-            </div>
-        </div>
-
-        <!-- Spalte Übermorgen -->
-        <div class="day-column" id="col-after-tomorrow">
-            <div class="column-header">
-                <h2>Übermorgen</h2>
-                <span class="date-str" id="date-after-tomorrow">--.--.</span>
-            </div>
-            <div class="events-container" id="events-after-tomorrow">
-                <!-- Dynamisch befüllt -->
-            </div>
-        </div>
+    <!-- Hauptbereich für Modulinhalte -->
+    <main id="app-container" class="app-container">
     </main>
 
-    <!-- ==========================================
-         MODUL: TASK TIMER POPUP / MODAL (MODULE_TASKS_TIMER)
-         ========================================== -->
-    <div class="modal-overlay" id="timer-modal">
-        <div class="timer-card">
-            <button class="close-modal-btn" onclick="closeTimerModal()">✕</button>
-            <h2 id="timer-task-title">Aufgabe starten</h2>
-
-            <!-- Personenzuordnung -->
-            <div class="assignee-selector">
-                <button class="assign-btn active" id="assign-oskar" onclick="setTimerAssignee('oskar')">👦 Oskar</button>
-                <button class="assign-btn" id="assign-irma" onclick="setTimerAssignee('irma')">👧 Irma</button>
-            </div>
-            
-            <!-- Themen-Auswahl -->
-            <div class="themes">
-                <button class="btn active" id="tBtn1" onclick="changeTheme('🎨', 1)">🎨 Aufräumen</button>
-                <button class="btn" id="tBtn2" onclick="changeTheme('🪥', 2)">🪥 Zähneputzen</button>
-                <button class="btn" id="tBtn3" onclick="changeTheme('👕', 3)">👕 Anziehen</button>
-            </div>
-
-            <div class="display-img" id="tImg">🎨</div>
-
-            <!-- Zeitauswahl -->
-            <div class="times">
-                <button class="btn" id="mBtn5" onclick="changeTime(5)">5 Min</button>
-                <button class="btn active" id="mBtn10" onclick="changeTime(10)">10 Min</button>
-                <button class="btn" id="mBtn15" onclick="changeTime(15)">15 Min</button>
-                <button class="btn" id="mBtn30" onclick="changeTime(30)">30 Min</button>
-                <button class="btn" id="mBtn45" onclick="changeTime(45)">45 Min</button>
-                <button class="btn" id="mBtn60" onclick="changeTime(60)">1 Std</button>
-            </div>
-
-            <!-- Visual Timer Canvas -->
-            <div class="clock-container">
-                <canvas id="clock" width="200" height="200"></canvas>
-            </div>
-
-            <div class="time-display" id="disp">10:00</div>
-
-            <!-- Start / Finish Controls -->
-            <div class="timer-actions">
-                <button class="start-btn" id="sBtn" onclick="startTimer()">START!</button>
-                <button class="finish-btn" id="fBtn" onclick="finishTimer(true)">FERTIG! 🎉</button>
-            </div>
-            
-            <button class="reset-btn" onclick="resetTimer()">Reset 🔄</button>
-        </div>
-    </div>
-
-    <!-- Feedback Popup -->
-    <div class="popup-overlay" id="feedback-pop">
-        <div class="popup-content">
-            <div class="popup-img" id="pImg">🚀</div>
-            <div class="popup-title" id="pTit">Super gemacht!</div>
-            <button class="btn" onclick="closeFeedbackPop()">Nochmal 🔄</button>
-        </div>
-    </div>
-
-    <!-- Einstellungen Modal (MODULE_SETTINGS_PIPEDREAM) -->
-    <div class="modal-overlay" id="settings-modal">
-        <div class="settings-card">
-            <h2>⚙️ Einstellungen</h2>
-            <div class="setting-group">
-                <label>Pipedream Base URL:</label>
-                <input type="text" id="pipedream-url" placeholder="https://endpoint.pipedream.net/..." />
-            </div>
-            <button class="btn" onclick="saveSettings()">Speichern</button>
-            <button class="reset-btn" onclick="toggleSettingsModal()">Schließen</button>
-        </div>
-    </div>
-
-    <!-- Scripte -->
+    <!-- Einbinden der JavaScript-Dateien -->
     <script src="js/api.js"></script>
     <script src="js/calendar.js"></script>
-    <script src="js/timer.js"></script>
     <script src="js/energy.js"></script>
+    <script src="js/timer.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>
