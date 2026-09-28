@@ -1,100 +1,126 @@
 /**
- * MODULE_TASKS_TIMER: Canvas Zeichnen & Timer-Ablauf
+ * Aufgabentimer-Modul (timer.js)
+ * Verwaltet das dynamische Erstellen, Ausführen und visuelle Darstellen von Timern.
  */
 
-let timerSeconds = 600;
-let remainingSeconds = 600;
-let timerInterval = null;
-let isRunning = false;
-let activeAssignee = 'oskar';
+const TimerModule = (function () {
+    'use strict';
 
-const canvas = document.getElementById('clock');
-const ctx = canvas ? canvas.getContext('2d') : null;
+    // Konfigurations-Mappings für Icons & Bezeichnungen
+    const PERSONS = {
+        oskar: { name: 'Oskar', icon: '👦' },
+        irma: { name: 'Irma', icon: '👧' }
+    };
 
-function drawClock() {
-    if (!ctx) return;
-    ctx.clearRect(0, 0, 200, 200);
+    const TOPICS = {
+        zahne: { name: 'Zähneputzen', icon: '🪥' },
+        anziehen: { name: 'Anziehen', icon: '👕' },
+        aufraumen: { name: 'Aufräumen', icon: '🧸' }
+    };
 
-    // Ziffernblatt Hintergrund
-    ctx.beginPath();
-    ctx.arc(100, 100, 90, 0, 2 * Math.PI);
-    ctx.fillStyle = '#ffffff';
-    ctx.fill();
-    ctx.strokeStyle = '#334155';
-    ctx.lineWidth = 4;
-    ctx.stroke();
+    // Speicher für aktive Timer-Instanzen
+    let timers = [];
 
-    // Rote Füllung (exakt auf 60 Minuten Skala bezogen)
-    if (remainingSeconds > 0) {
-        let currentSecondsRatio = remainingSeconds / 3600; 
-        let startAngle = -0.5 * Math.PI; 
-        let endAngle = startAngle + (2 * Math.PI * currentSecondsRatio);
-
-        ctx.beginPath();
-        ctx.moveTo(100, 100);
-        ctx.arc(100, 100, 88, startAngle, endAngle, false);
-        ctx.lineTo(100, 100);
-        ctx.fillStyle = '#ef4444';
-        ctx.fill();
+    /**
+     * Initialisiert Event-Listener für Formular & Modal
+     */
+    function init() {
+        setupModalEvents();
+        setupFormSelectionEvents();
     }
 
-    // 12 Stunden Striche
-    for (let i = 0; i < 12; i++) {
-        let angle = i * Math.PI / 6;
-        ctx.beginPath();
-        ctx.moveTo(100 + 78 * Math.cos(angle), 100 + 78 * Math.sin(angle));
-        ctx.lineTo(100 + 88 * Math.cos(angle), 100 + 88 * Math.sin(angle));
-        ctx.strokeStyle = '#333333';
-        ctx.lineWidth = i % 3 === 0 ? 3 : 1.5;
-        ctx.stroke();
-    }
-}
+    /**
+     * Bindet Event-Listener für Modals und Formularabsendung
+     */
+    function setupModalEvents() {
+        const btnOpen = document.getElementById('btn-open-timer-modal');
+        const btnClose = document.getElementById('btn-close-modal');
+        const modal = document.getElementById('timer-modal');
+        const form = document.getElementById('timer-form');
+        const btnCloseResult = document.getElementById('btn-close-result');
+        const resultModal = document.getElementById('result-modal');
 
-function updateDisplay() {
-    let mn = Math.floor(remainingSeconds / 60);
-    let sc = remainingSeconds % 60;
-    document.getElementById('disp').innerText = 
-        `\({mn.toString().padStart(2, '0')}:\){sc.toString().padStart(2, '0')}`;
-    drawClock();
-}
+        if (btnOpen) btnOpen.addEventListener('click', () => modal.classList.remove('hidden'));
+        if (btnClose) btnClose.addEventListener('click', () => modal.classList.add('hidden'));
+        if (btnCloseResult) btnCloseResult.addEventListener('click', () => resultModal.classList.add('hidden'));
 
-function startTimer() {
-    if (isRunning) return;
-    isRunning = true;
-    document.getElementById('sBtn').style.display = 'none';
-    document.getElementById('fBtn').style.display = 'inline-block';
-
-    timerInterval = setInterval(() => {
-        remainingSeconds--;
-        updateDisplay();
-        if (remainingSeconds <= 0) {
-            clearInterval(timerInterval);
-            finishTimer(false);
+        if (form) {
+            form.addEventListener('submit', (e) => {
+                e.preventDefault();
+                createTimersFromForm();
+                modal.classList.add('hidden');
+            });
         }
-    }, 1000);
-}
+    }
 
-function finishTimer(success) {
-    clearInterval(timerInterval);
-    document.getElementById('pImg').innerText = success ? '🚀' : '❌';
-    document.getElementById('pTit').innerText = success ? 'Super gemacht!' : 'Zeit um!';
-    document.getElementById('pTit').style.color = success ? '#22c55e' : '#ef4444';
-    document.getElementById('feedback-pop').style.display = 'flex';
-}
+    /**
+     * Stellt sicher, dass bei Auswahl-Buttons nur jeweils einer pro Gruppe 'active' ist
+     */
+    function setupFormSelectionEvents() {
+        const selectGroups = document.querySelectorAll('.select-group');
+        selectGroups.forEach(group => {
+            group.addEventListener('click', (e) => {
+                if (e.target.classList.contains('btn-select')) {
+                    group.querySelectorAll('.btn-select').forEach(b => b.classList.remove('active'));
+                    e.target.classList.add('active');
+                }
+            });
+        });
+    }
 
-function closeFeedbackPop() {
-    document.getElementById('feedback-pop').style.display = 'none';
-    resetTimer();
-}
+    /**
+     * Liest das Erstellungs-Formular aus und generiert die Timer-Karten
+     */
+    function createTimersFromForm() {
+        const personKey = getSelectedValue('group-person');
+        const topicKey = getSelectedValue('group-topic');
+        const durationMin = parseInt(getSelectedValue('group-duration'), 10);
+        const dayKey = getSelectedValue('group-day');
+        const repeatCount = parseInt(getSelectedValue('group-repeat'), 10);
 
-function resetTimer() {
-    clearInterval(timerInterval);
-    isRunning = false;
-    remainingSeconds = timerSeconds;
-    document.getElementById('sBtn').style.display = 'inline-block';
-    document.getElementById('fBtn').style.display = 'none';
-    updateDisplay();
-}
+        // Tage ermitteln, in die eingefügt werden soll
+        const targetDays = dayKey === 'all' ? ['today', 'tomorrow', 'after-tomorrow'] : [dayKey];
 
-// Initialer Aufruf
-drawClock();
+        targetDays.forEach(day => {
+            for (let i = 1; i <= repeatCount; i++) {
+                const repeatLabel = repeatCount > 1 ? ` (\({i}/\){repeatCount})` : '';
+                const timerObj = {
+                    id: 'timer-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                    personKey,
+                    topicKey,
+                    durationSec: durationMin * 60,
+                    remainingSec: durationMin * 60,
+                    repeatLabel,
+                    day,
+                    status: 'ready', // ready, running, finished
+                    intervalId: null
+                };
+                timers.push(timerObj);
+                renderTimerCard(timerObj);
+            }
+        });
+    }
+
+    /**
+     * Hilfsfunktion zum Auslesen des aktiven Werts einer Button-Gruppe
+     */
+    function getSelectedValue(groupId) {
+        const activeBtn = document.querySelector(`#${groupId} .btn-select.active`);
+        return activeBtn ? activeBtn.getAttribute('data-value') : null;
+    }
+
+    /**
+     * Rendert die HTML-Karte für einen einzelnen Timer in die entsprechende Spalte
+     */
+    function renderTimerCard(timer) {
+        const targetList = document.getElementById(`list-${timer.day}`);
+        if (!targetList) return;
+
+        const person = PERSONS[timer.personKey];
+        const topic = TOPICS[timer.topicKey];
+
+        const card = document.createElement('div');
+        card.className = 'timer-card';
+        card.id = timer.id;
+
+        card.innerHTML = `
