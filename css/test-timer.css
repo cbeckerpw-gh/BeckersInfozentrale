@@ -1,0 +1,30 @@
+.test-timer-container {
+    margin-top: 20px;
+    padding: 15px;
+    background-color: #1a1a1a;
+    border: 1px dashed #00b4d8;
+    border-radius: 8px;
+    text-align: center;
+    color: #ffffff;
+}
+
+.test-timer-display {
+    font-size: 2rem;
+    font-weight: bold;
+    font-family: monospace;
+    margin: 10px 0;
+    color: #00b4d8;
+}
+
+.test-timer-controls {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.test-status-text {
+    font-size: 0.85rem;
+    color: #aaa;
+    margin: 0;
+}
