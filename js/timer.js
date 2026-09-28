@@ -21,6 +21,9 @@ const TimerModule = (function () {
     // Speicher für aktive Timer-Instanzen
     let timers = [];
 
+    // Referenz für den Auto-Close-Timer des Ergebnis-Popups
+    let popupAutoCloseTimeout = null;
+
     /**
      * Initialisiert Event-Listener für Formular & Modal
      */
@@ -45,16 +48,14 @@ const TimerModule = (function () {
 
         // Schließen des Ergebnis-Popups über den Button
         if (btnCloseResult) {
-            btnCloseResult.addEventListener('click', () => {
-                if (resultModal) resultModal.classList.add('hidden');
-            });
+            btnCloseResult.addEventListener('click', hideResultPopup);
         }
 
         // Schließen des Ergebnis-Popups bei Klick auf den Hintergrund
         if (resultModal) {
             resultModal.addEventListener('click', (e) => {
                 if (e.target === resultModal) {
-                    resultModal.classList.add('hidden');
+                    hideResultPopup();
                 }
             });
         }
@@ -308,9 +309,15 @@ const TimerModule = (function () {
     }
 
     /**
-     * Öffnet das Ergebnis-Popup mit dynamischem Button-Text
+     * Öffnet das Ergebnis-Popup mit dynamischem Button-Text & Auto-Close nach 60s
      */
     function showResultPopup(icon, title, text, btnText) {
+        // Falls bereits ein Auto-Close-Timer läuft, löschen wir diesen
+        if (popupAutoCloseTimeout) {
+            clearTimeout(popupAutoCloseTimeout);
+            popupAutoCloseTimeout = null;
+        }
+
         document.getElementById('result-icon').textContent = icon;
         document.getElementById('result-title').textContent = title;
         document.getElementById('result-text').textContent = text;
@@ -320,7 +327,30 @@ const TimerModule = (function () {
             btnCloseResult.textContent = btnText || 'OK';
         }
 
-        document.getElementById('result-modal').classList.remove('hidden');
+        const resultModal = document.getElementById('result-modal');
+        if (resultModal) {
+            resultModal.classList.remove('hidden');
+        }
+
+        // Auto-Close nach 60 Sekunden (60000 ms) einrichten
+        popupAutoCloseTimeout = setTimeout(() => {
+            hideResultPopup();
+        }, 60000);
+    }
+
+    /**
+     * Schließt das Ergebnis-Popup sauber und storniert den Timer
+     */
+    function hideResultPopup() {
+        if (popupAutoCloseTimeout) {
+            clearTimeout(popupAutoCloseTimeout);
+            popupAutoCloseTimeout = null;
+        }
+
+        const resultModal = document.getElementById('result-modal');
+        if (resultModal) {
+            resultModal.classList.add('hidden');
+        }
     }
 
     /**
