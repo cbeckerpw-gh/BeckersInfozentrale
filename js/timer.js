@@ -42,7 +42,22 @@ const TimerModule = (function () {
 
         if (btnOpen) btnOpen.addEventListener('click', () => modal.classList.remove('hidden'));
         if (btnClose) btnClose.addEventListener('click', () => modal.classList.add('hidden'));
-        if (btnCloseResult) btnCloseResult.addEventListener('click', () => resultModal.classList.add('hidden'));
+
+        // Schließen des Ergebnis-Popups über den Button
+        if (btnCloseResult) {
+            btnCloseResult.addEventListener('click', () => {
+                if (resultModal) resultModal.classList.add('hidden');
+            });
+        }
+
+        // Schließen des Ergebnis-Popups bei Klick auf den Hintergrund
+        if (resultModal) {
+            resultModal.addEventListener('click', (e) => {
+                if (e.target === resultModal) {
+                    resultModal.classList.add('hidden');
+                }
+            });
+        }
 
         if (form) {
             form.addEventListener('submit', (e) => {
