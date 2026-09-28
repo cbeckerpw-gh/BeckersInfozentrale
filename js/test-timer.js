@@ -1,5 +1,5 @@
 /**
- * Isolierter Test für Hintergrund-Timer via Timestamp (v1.1-dev)
+ * Isolierter Test für Hintergrund-Timer via Timestamp (v1.1-dev) - inkl. Konsole-Logs
  */
 (function () {
     'use strict';
@@ -8,31 +8,44 @@
     const STORAGE_KEY = 'test_timer_end_time';
 
     function initTestTimer() {
+        console.log('🧪 Test-Timer v1.1-dev wird initialisiert...');
+
         const btnStart = document.getElementById('btn-test-start');
         const btnReset = document.getElementById('btn-test-reset');
 
-        if (btnStart) {
-            btnStart.addEventListener('click', function () {
-                startTestTimer(120); // 120 Sekunden = 2 Min
-            });
+        if (!btnStart) {
+            console.error('❌ Fehler: Button #btn-test-start im HTML nicht gefunden!');
+            return;
         }
 
-        if (btnReset) {
-            btnReset.addEventListener('click', resetTestTimer);
+        if (!btnReset) {
+            console.error('❌ Fehler: Button #btn-test-reset im HTML nicht gefunden!');
+            return;
         }
+
+        console.log('✅ Buttons erfolgreich im DOM gefunden. Binde Click-Events...');
+
+        btnStart.addEventListener('click', function () {
+            console.log('▶️ Button "2 Min Starten" geklickt!');
+            startTestTimer(120); // 120 Sekunden = 2 Min
+        });
+
+        btnReset.addEventListener('click', function () {
+            console.log('🔄 Button "Reset" geklickt!');
+            resetTestTimer();
+        });
 
         // Event-Listener: Reagiert sofort beim Zurückkehren in den Tab / Entsperren
         document.addEventListener('visibilitychange', function () {
             if (document.visibilityState === 'visible') {
+                console.log('👁️ Tab wieder sichtbar. Aktualisiere Anzeige...');
                 updateTimerDisplay();
             }
         });
 
-        // Prüfen, ob bereits ein aktiver Test-Timer läuft
         checkExistingTimer();
     }
 
-    // Sicherstellen, dass die Initialisierung unabhängig vom Ladezeitpunkt ausgeführt wird
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', initTestTimer);
     } else {
