@@ -7,23 +7,37 @@
     let testInterval = null;
     const STORAGE_KEY = 'test_timer_end_time';
 
-    document.addEventListener('DOMContentLoaded', () => {
+    function initTestTimer() {
         const btnStart = document.getElementById('btn-test-start');
         const btnReset = document.getElementById('btn-test-reset');
 
-        if (btnStart) btnStart.addEventListener('click', () => startTestTimer(120)); // 120 Sekunden = 2 Min
-        if (btnReset) btnReset.addEventListener('click', resetTestTimer);
+        if (btnStart) {
+            btnStart.addEventListener('click', function () {
+                startTestTimer(120); // 120 Sekunden = 2 Min
+            });
+        }
 
-        // Event-Listener: Feuert sofort, wenn man zum Tab zurückkehrt oder die App wieder öffnet
-        document.addEventListener('visibilitychange', () => {
+        if (btnReset) {
+            btnReset.addEventListener('click', resetTestTimer);
+        }
+
+        // Event-Listener: Reagiert sofort beim Zurückkehren in den Tab / Entsperren
+        document.addEventListener('visibilitychange', function () {
             if (document.visibilityState === 'visible') {
                 updateTimerDisplay();
             }
         });
 
-        // Prüfen, ob noch ein aktiver Test-Timer läuft (z. B. nach Tab-Reload)
+        // Prüfen, ob bereits ein aktiver Test-Timer läuft
         checkExistingTimer();
-    });
+    }
+
+    // Sicherstellen, dass die Initialisierung unabhängig vom Ladezeitpunkt ausgeführt wird
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTestTimer);
+    } else {
+        initTestTimer();
+    }
 
     function startTestTimer(seconds) {
         const endTime = Date.now() + (seconds * 1000);
@@ -36,8 +50,7 @@
     function runInterval() {
         if (testInterval) clearInterval(testInterval);
 
-        // Optische Aktualisierung jede Sekunde
-        testInterval = setInterval(() => {
+        testInterval = setInterval(function () {
             const isFinished = updateTimerDisplay();
             if (isFinished) {
                 clearInterval(testInterval);
@@ -57,7 +70,6 @@
         const remainingMs = endTime - now;
         const remainingSec = Math.max(0, Math.round(remainingMs / 1000));
 
-        // Formatierung MM:SS
         const min = Math.floor(remainingSec / 60);
         const sec = remainingSec % 60;
         display.textContent = (min < 10 ? '0' : '') + min + ':' + (sec < 10 ? '0' : '') + sec;
@@ -65,7 +77,7 @@
         if (remainingSec <= 0) {
             updateStatus('🚀 Zeit abgelaufen!');
             localStorage.removeItem(STORAGE_KEY);
-            return true; // Timer ist fertig
+            return true;
         }
 
         return false;
