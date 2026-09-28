@@ -78,6 +78,8 @@ const TimerModule = (function () {
         const dayKey = getSelectedValue('group-day') || 'today';
         const repeatCount = parseInt(getSelectedValue('group-repeat') || '1', 10);
 
+        const todayStr = new Date().toISOString().split('T')[0];
+
         // Tage ermitteln, in die eingefügt werden soll
         const targetDays = dayKey === 'all' ? ['today', 'tomorrow', 'after-tomorrow'] : [dayKey];
 
@@ -86,6 +88,7 @@ const TimerModule = (function () {
                 const repeatLabel = repeatCount > 1 ? ' (' + i + '/' + repeatCount + ')' : '';
                 const timerObj = {
                     id: 'timer-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
+                    createdDate: todayStr,
                     personKey: personKey,
                     topicKey: topicKey,
                     durationMin: durationMin,
@@ -174,7 +177,8 @@ const TimerModule = (function () {
             showResultPopup(
                 '🚀', 
                 person.icon + ' Klasse ' + person.name + ', gut gemacht!', 
-                'Du hast die Aufgabe "' + topic.name + '" rechtzeitig geschafft!'
+                'Du hast die Aufgabe "' + topic.name + '" rechtzeitig geschafft!',
+                'Super!'
             );
 
             removeTimerCard(timerId);
@@ -201,7 +205,8 @@ const TimerModule = (function () {
                 showResultPopup(
                     '❌', 
                     'Zeit abgelaufen!', 
-                    person.name + ' hat die Aufgabe "' + topic.name + '" leider nicht rechtzeitig geschafft.'
+                    person.name + ' hat die Aufgabe "' + topic.name + '" leider nicht rechtzeitig geschafft.',
+                    'OK'
                 );
                 markTimerAsFailed(timer.id);
             }
@@ -210,11 +215,9 @@ const TimerModule = (function () {
 
     /**
      * Erzeugt das SVG der Analoguhr.
-     * Basierend auf echten Minuten (60 Min = 360 Grad / Vollkreis).
      */
     function generateClockSVG(remainingSec, isFailed) {
         if (isFailed) {
-            // Rotes Kreuz Overlay bei abgelaufenem Timer
             return '<svg class="analog-clock-svg" viewBox="0 0 50 50">' +
                     '<circle class="clock-face" cx="25" cy="25" r="20" />' +
                     '<path d="M 15 15 L 35 35 M 35 15 L 15 35" stroke="#d32f2f" stroke-width="4" stroke-linecap="round" />' +
@@ -290,12 +293,18 @@ const TimerModule = (function () {
     }
 
     /**
-     * Öffnet das Ergebnis-Popup (Erfolg/Fehlgeschlagen)
+     * Öffnet das Ergebnis-Popup mit dynamischem Button-Text
      */
-    function showResultPopup(icon, title, text) {
+    function showResultPopup(icon, title, text, btnText) {
         document.getElementById('result-icon').textContent = icon;
         document.getElementById('result-title').textContent = title;
         document.getElementById('result-text').textContent = text;
+        
+        const btnCloseResult = document.getElementById('btn-close-result');
+        if (btnCloseResult) {
+            btnCloseResult.textContent = btnText || 'OK';
+        }
+
         document.getElementById('result-modal').classList.remove('hidden');
     }
 
