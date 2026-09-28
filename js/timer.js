@@ -83,16 +83,16 @@ const TimerModule = (function () {
 
         targetDays.forEach(day => {
             for (let i = 1; i <= repeatCount; i++) {
-                const repeatLabel = repeatCount > 1 ? ` (\({i}/\){repeatCount})` : '';
+                const repeatLabel = repeatCount > 1 ? ' (' + i + '/' + repeatCount + ')' : '';
                 const timerObj = {
                     id: 'timer-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5),
-                    personKey,
-                    topicKey,
-                    durationMin,
+                    personKey: personKey,
+                    topicKey: topicKey,
+                    durationMin: durationMin,
                     durationSec: durationMin * 60,
                     remainingSec: durationMin * 60,
-                    repeatLabel,
-                    day,
+                    repeatLabel: repeatLabel,
+                    day: day,
                     status: 'ready', // ready, running, finished, failed
                     intervalId: null
                 };
@@ -124,22 +124,21 @@ const TimerModule = (function () {
         card.className = 'timer-card';
         card.id = timer.id;
 
-        card.innerHTML = `
-            <div class="timer-info">
-                <div class="timer-icons">
-                    <span>${person.icon}</span>
-                    <span>${topic.icon}</span>
-                </div>
-                <div class="timer-details">
-                    <span class="timer-title">\({person.name} -\){topic.name}${timer.repeatLabel}</span>
-                    <span class="timer-subtext" id="time-text-\({timer.id}">\){Math.ceil(timer.remainingSec / 60)} Min</span>
-                </div>
-            </div>
-            <div class="analog-clock-container" id="clock-${timer.id}">
-                ${generateClockSVG(timer.remainingSec)}
-            </div>
-            <button class="btn btn-success" id="btn-action-${timer.id}">Start</button>
-        `;
+        card.innerHTML = 
+            '<div class="timer-info">' +
+                '<div class="timer-icons">' +
+                    '<span>' + person.icon + '</span>' +
+                    '<span>' + topic.icon + '</span>' +
+                '</div>' +
+                '<div class="timer-details">' +
+                    '<span class="timer-title">' + person.name + ' - ' + topic.name + timer.repeatLabel + '</span>' +
+                    '<span class="timer-subtext" id="time-text-' + timer.id + '">' + Math.ceil(timer.remainingSec / 60) + ' Min</span>' +
+                '</div>' +
+            '</div>' +
+            '<div class="analog-clock-container" id="clock-' + timer.id + '">' +
+                generateClockSVG(timer.remainingSec, false) +
+            '</div>' +
+            '<button class="btn btn-success" id="btn-action-' + timer.id + '">Start</button>';
 
         targetList.appendChild(card);
 
@@ -174,8 +173,8 @@ const TimerModule = (function () {
 
             showResultPopup(
                 '🚀', 
-                `\({person.icon} Klasse\){person.name}, gut gemacht!`, 
-                `Du hast die Aufgabe "${topic.name}" rechtzeitig geschafft!`
+                person.icon + ' Klasse ' + person.name + ', gut gemacht!', 
+                'Du hast die Aufgabe "' + topic.name + '" rechtzeitig geschafft!'
             );
 
             removeTimerCard(timerId);
@@ -202,7 +201,7 @@ const TimerModule = (function () {
                 showResultPopup(
                     '❌', 
                     'Zeit abgelaufen!', 
-                    `\({person.name} hat die Aufgabe "\){topic.name}" leider nicht rechtzeitig geschafft.`
+                    person.name + ' hat die Aufgabe "' + topic.name + '" leider nicht rechtzeitig geschafft.'
                 );
                 markTimerAsFailed(timer.id);
             }
@@ -213,15 +212,13 @@ const TimerModule = (function () {
      * Erzeugt das SVG der Analoguhr.
      * Basierend auf echten Minuten (60 Min = 360 Grad / Vollkreis).
      */
-    function generateClockSVG(remainingSec, isFailed = false) {
+    function generateClockSVG(remainingSec, isFailed) {
         if (isFailed) {
             // Rotes Kreuz Overlay bei abgelaufenem Timer
-            return `
-                <svg class="analog-clock-svg" viewBox="0 0 50 50">
-                    <circle class="clock-face" cx="25" cy="25" r="20" />
-                    <path d="M 15 15 L 35 35 M 35 15 L 15 35" stroke="#d32f2f" stroke-width="4" stroke-linecap="round" />
-                </svg>
-            `;
+            return '<svg class="analog-clock-svg" viewBox="0 0 50 50">' +
+                    '<circle class="clock-face" cx="25" cy="25" r="20" />' +
+                    '<path d="M 15 15 L 35 35 M 35 15 L 15 35" stroke="#d32f2f" stroke-width="4" stroke-linecap="round" />' +
+                '</svg>';
         }
 
         const remainingMin = remainingSec / 60;
@@ -236,16 +233,14 @@ const TimerModule = (function () {
         if (angle >= 359.9) {
             pathData = 'M 25 5 A 20 20 0 1 1 24.99 5 Z';
         } else if (angle > 0) {
-            pathData = `M 25 25 L 25 5 A 20 20 0 \({largeArc} 1\){x} ${y} Z`;
+            pathData = 'M 25 25 L 25 5 A 20 20 0 ' + largeArc + ' 1 ' + x + ' ' + y + ' Z';
         }
 
-        return `
-            <svg class="analog-clock-svg" viewBox="0 0 50 50">
-                <circle class="clock-face" cx="25" cy="25" r="20" />
-                <path class="clock-segment" d="${pathData}" />
-                <circle class="clock-center" cx="25" cy="25" r="2" />
-            </svg>
-        `;
+        return '<svg class="analog-clock-svg" viewBox="0 0 50 50">' +
+                '<circle class="clock-face" cx="25" cy="25" r="20" />' +
+                '<path class="clock-segment" d="' + pathData + '" />' +
+                '<circle class="clock-center" cx="25" cy="25" r="2" />' +
+            '</svg>';
     }
 
     /**
@@ -256,7 +251,7 @@ const TimerModule = (function () {
         const timeText = document.getElementById('time-text-' + timerId);
         
         if (clockContainer) {
-            clockContainer.innerHTML = generateClockSVG(remainingSec);
+            clockContainer.innerHTML = generateClockSVG(remainingSec, false);
         }
 
         if (timeText) {
@@ -314,7 +309,7 @@ const TimerModule = (function () {
     }
 
     return {
-        init
+        init: init
     };
 })();
 
