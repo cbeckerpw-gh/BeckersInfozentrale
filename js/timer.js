@@ -1,5 +1,5 @@
 /**
- * Hauptmodul für Aufgabentimer (v1.1 mit persönlicher Erfolgs-/Fehlgeschlagen-Meldung)
+ * Hauptmodul für Aufgabentimer (v1.2 - Mehrfachauswahl, Zeitraum & Tageswiederholungen)
  */
 (function () {
     'use strict';
@@ -48,11 +48,27 @@
     function setupSelectGroups() {
         const selectGroups = document.querySelectorAll('.select-group');
         selectGroups.forEach(function (group) {
+            const isPersonGroup = group.id === 'group-person';
             const buttons = group.querySelectorAll('.btn-select');
+
             buttons.forEach(function (btn) {
                 btn.addEventListener('click', function () {
-                    buttons.forEach(function (b) { b.classList.remove('active'); });
-                    this.classList.add('active');
+                    if (isPersonGroup) {
+                        // Mehrfachauswahl für Personen erlauben (Toggle)
+                        const activeBtns = group.querySelectorAll('.btn-select.active');
+                        if (this.classList.contains('active')) {
+                            // Mindestens eine Person muss ausgewählt bleiben
+                            if (activeBtns.length > 1) {
+                                this.classList.remove('active');
+                            }
+                        } else {
+                            this.classList.add('active');
+                        }
+                    } else {
+                        // Einzelauswahl für Themen, Dauer, Zeitraum, Wiederholungen
+                        buttons.forEach(function (b) { b.classList.remove('active'); });
+                        this.classList.add('active');
+                    }
                 });
             });
         });
@@ -76,29 +92,69 @@
     function handleFormSubmit(e) {
         e.preventDefault();
 
-        const person = getActiveSelectValue('group-person') || 'oskar';
+        // 1. Personen ermitteln (können mehrere sein)
+        const selectedPersons = getActivePersonValues();
+        const personsToCreate = selectedPersons.length > 0 ? selectedPersons : ['oskar'];
+
+        // 2. Thema, Dauer & Tag/Zeitraum
         const topic = getActiveSelectValue('group-topic') || 'zahne';
         const durationMinutes = parseInt(getActiveSelectValue('group-duration') || '5', 10);
-        const dayTarget = getActiveSelectValue('group-day') || 'today';
+        const dayTargetRaw = getActiveSelectValue('group-day') || 'today';
+        const repeatCountRaw = getActiveSelectValue('group-repeat') || '1x'; // '1x', '2x', '3x'
+
+        // Tage festlegen
+        let targetDays = [];
+        if (dayTargetRaw === 'all' || dayTargetRaw === 'alle') {
+            targetDays = ['today', 'tomorrow', 'after-tomorrow'];
+        } else {
+            targetDays = [dayTargetRaw];
+        }
+
+        // Wiederholungen festlegen
+        let repeatTimes = 1;
+        if (repeatCountRaw === '2x' || repeatCountRaw === '2x täglich') repeatTimes = 2;
+        if (repeatCountRaw === '3x' || repeatCountRaw === '3x täglich') repeatTimes = 3;
 
         const durationSec = durationMinutes * 60;
 
-        const newTimer = {
-            id: 'timer-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
-            person: person,
-            topic: topic,
-            durationMinutes: durationMinutes,
-            durationSeconds: durationSec,
-            remainingSeconds: durationSec,
-            dayTarget: dayTarget,
-            status: 'idle',
-            endTime: null
-        };
+        // 3. Karten in Schleife erstellen (Personen x Tage x Wiederholungen)
+        personsToCreate.forEach(function (person) {
+            targetDays.forEach(function (day) {
+                for (let i = 1; i <= repeatTimes; i++) {
+                    const repeatLabel = repeatTimes > 1 ? ` (\({i}/\){repeatTimes})` : '';
 
-        timers.push(newTimer);
+                    const newTimer = {
+                        id: 'timer-' + Date.now() + '-' + Math.floor(Math.random() * 10000),
+                        person: person,
+                        topic: topic,
+                        repeatLabel: repeatLabel, // Zähler z. B. (1/2)
+                        durationMinutes: durationMinutes,
+                        durationSeconds: durationSec,
+                        remainingSeconds: durationSec,
+                        dayTarget: day,
+                        status: 'idle',
+                        endTime: null
+                    };
+
+                    timers.push(newTimer);
+                }
+            });
+        });
+
         saveTimersToStorage();
         renderAllTimers();
         closeModal();
+    }
+
+    function getActivePersonValues() {
+        const group = document.getElementById('group-person');
+        if (!group) return [];
+        const activeBtns = group.querySelectorAll('.btn-select.active');
+        const persons = [];
+        activeBtns.forEach(function (btn) {
+            persons.push(btn.getAttribute('data-value'));
+        });
+        return persons;
     }
 
     function getActiveSelectValue(groupId) {
@@ -136,7 +192,7 @@
             delete activeIntervals[id];
         }
 
-        handleTimerFinished(timer, true); // True = Manuell/Erfolgreich
+        handleTimerFinished(timer, true);
     };
 
     function runTimerInterval(timer) {
@@ -149,7 +205,7 @@
             if (isFinished) {
                 clearInterval(activeIntervals[timer.id]);
                 delete activeIntervals[timer.id];
-                handleTimerFinished(timer, false); // False = Zeit abgelaufen / Nicht geschafft
+                handleTimerFinished(timer, false);
             }
         }, 1000);
 
@@ -263,12 +319,8 @@
                 listToday.appendChild(cardElement);
             } else if (timer.dayTarget === 'tomorrow' && listTomorrow) {
                 listTomorrow.appendChild(cardElement);
-            } else if (timer.dayTarget === 'after-tomorrow' && listAfterTomorrow) {
+            } else if ((timer.dayTarget === 'after-tomorrow' || timer.dayTarget === 'ubermorgen') && listAfterTomorrow) {
                 listAfterTomorrow.appendChild(cardElement);
-            } else if (timer.dayTarget === 'all') {
-                if (listToday) listToday.appendChild(cardElement.cloneNode(true));
-                if (listTomorrow) listTomorrow.appendChild(cardElement.cloneNode(true));
-                if (listAfterTomorrow) listAfterTomorrow.appendChild(cardElement.cloneNode(true));
             }
         });
     }
@@ -324,6 +376,9 @@
             topicIcon = '🧸';
         }
 
+        // Wiederholungsanzeige wie (1/2) anhängen
+        const repeatSuffix = timer.repeatLabel || '';
+
         let remainingSec = timer.durationSeconds;
         if (timer.status === 'running' && timer.endTime) {
             remainingSec = Math.max(0, Math.round((timer.endTime - Date.now()) / 1000));
@@ -345,7 +400,7 @@
         titleDiv.textContent = personIcon + ' ' + personName;
 
         const subtitleDiv = document.createElement('span');
-        subtitleDiv.textContent = topicIcon + ' ' + topicName;
+        subtitleDiv.textContent = topicIcon + ' ' + topicName + repeatSuffix;
 
         infoDiv.appendChild(titleDiv);
         infoDiv.appendChild(subtitleDiv);
