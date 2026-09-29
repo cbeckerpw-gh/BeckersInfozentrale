@@ -38,7 +38,6 @@
             timerForm.addEventListener('submit', handleFormSubmit);
         }
 
-        // Toggle-Buttons in den Formular-Auswahlgruppen
         setupSelectGroups();
 
         // Sofortige Aktualisierung beim Entsperren oder Tab-Wechsel
@@ -51,11 +50,11 @@
 
     function setupSelectGroups() {
         const selectGroups = document.querySelectorAll('.select-group');
-        selectGroups.forEach(group => {
+        selectGroups.forEach(function (group) {
             const buttons = group.querySelectorAll('.btn-select');
-            buttons.forEach(btn => {
+            buttons.forEach(function (btn) {
                 btn.addEventListener('click', function () {
-                    buttons.forEach(b => b.classList.remove('active'));
+                    buttons.forEach(function (b) { b.classList.remove('active'); });
                     this.classList.add('active');
                 });
             });
@@ -94,7 +93,7 @@
             durationMinutes: durationMinutes,
             durationSeconds: durationMinutes * 60,
             dayTarget: dayTarget,
-            status: 'idle', // 'idle', 'running', 'paused', 'finished'
+            status: 'idle',
             endTime: null
         };
 
@@ -113,12 +112,11 @@
 
     // Timer Steuerung: Start / Pause / Reset
     window.startTimer = function (id) {
-        const timer = timers.find(t => t.id === id);
+        const timer = timers.find(function (t) { return t.id === id; });
         if (!timer) return;
 
         if (timer.status !== 'running') {
-            // Endzeitpunkt basierend auf verbleibender Dauer festlegen
-            const remainingSec = timer.remainingSeconds !== undefined ? timer.remainingSeconds : timer.durationSeconds;
+            const remainingSec = (timer.remainingSeconds !== undefined) ? timer.remainingSeconds : timer.durationSeconds;
             timer.endTime = Date.now() + (remainingSec * 1000);
             timer.status = 'running';
             saveTimersToStorage();
@@ -128,10 +126,9 @@
     };
 
     window.pauseTimer = function (id) {
-        const timer = timers.find(t => t.id === id);
+        const timer = timers.find(function (t) { return t.id === id; });
         if (!timer || timer.status !== 'running') return;
 
-        // Verbleibende Sekunden beim Pausieren sichern
         const now = Date.now();
         const remainingMs = timer.endTime - now;
         timer.remainingSeconds = Math.max(0, Math.round(remainingMs / 1000));
@@ -148,7 +145,7 @@
     };
 
     window.resetTimer = function (id) {
-        const timer = timers.find(t => t.id === id);
+        const timer = timers.find(function (t) { return t.id === id; });
         if (!timer) return;
 
         if (activeIntervals[id]) {
@@ -193,18 +190,20 @@
         if (displayEl) {
             const min = Math.floor(remainingSec / 60);
             const sec = remainingSec % 60;
-            displayEl.textContent = (min < 10 ? '0' : '') + min + ':' + (sec < 10 ? '0' : '') + sec;
+            const minStr = min < 10 ? '0' + min : '' + min;
+            const secStr = sec < 10 ? '0' + sec : '' + sec;
+            displayEl.textContent = minStr + ':' + secStr;
         }
 
         if (remainingSec <= 0) {
-            return true; // Timer ist abgelaufen
+            return true;
         }
 
         return false;
     }
 
     function updateAllTimersUI() {
-        timers.forEach(timer => {
+        timers.forEach(function (timer) {
             if (timer.status === 'running') {
                 const isFinished = updateSingleTimerUI(timer);
                 if (isFinished) {
@@ -224,8 +223,6 @@
         timer.remainingSeconds = 0;
         saveTimersToStorage();
         renderAllTimers();
-
-        // Popup / Result Modal anzeigen
         showResultModal(timer);
     }
 
@@ -238,7 +235,7 @@
         if (!resultModal) return;
 
         const personName = timer.person === 'oskar' ? 'Oskar' : 'Irma';
-        
+
         if (resultTitle) resultTitle.textContent = '🎉 Super gemacht!';
         if (resultText) resultText.textContent = personName + ' hat die Aufgabe zeitnah erledigt!';
         if (resultIcon) resultIcon.textContent = '⏱️';
@@ -248,7 +245,7 @@
 
     // Automatischer Hintergrund-Sync / Wiederherstellung beim Laden
     function startGlobalBackgroundSync() {
-        timers.forEach(timer => {
+        timers.forEach(function (timer) {
             if (timer.status === 'running' && timer.endTime) {
                 const now = Date.now();
                 if (now >= timer.endTime) {
@@ -270,24 +267,28 @@
         if (listTomorrow) listTomorrow.innerHTML = '';
         if (listAfterTomorrow) listAfterTomorrow.innerHTML = '';
 
-        timers.forEach(timer => {
-            const cardHTML = createTimerCardHTML(timer);
+        timers.forEach(function (timer) {
+            const cardElement = createTimerCardElement(timer);
 
             if (timer.dayTarget === 'today' && listToday) {
-                listToday.insertAdjacentHTML('beforeend', cardHTML);
+                listToday.appendChild(cardElement);
             } else if (timer.dayTarget === 'tomorrow' && listTomorrow) {
-                listTomorrow.insertAdjacentHTML('beforeend', cardHTML);
+                listTomorrow.appendChild(cardElement);
             } else if (timer.dayTarget === 'after-tomorrow' && listAfterTomorrow) {
-                listAfterTomorrow.insertAdjacentHTML('beforeend', cardHTML);
+                listAfterTomorrow.appendChild(cardElement);
             } else if (timer.dayTarget === 'all') {
-                if (listToday) listToday.insertAdjacentHTML('beforeend', cardHTML);
-                if (listTomorrow) listTomorrow.insertAdjacentHTML('beforeend', cardHTML);
-                if (listAfterTomorrow) listAfterTomorrow.insertAdjacentHTML('beforeend', cardHTML);
+                if (listToday) listToday.appendChild(cardElement.cloneNode(true));
+                if (listTomorrow) listTomorrow.appendChild(cardElement.cloneNode(true));
+                if (listAfterTomorrow) listAfterTomorrow.appendChild(cardElement.cloneNode(true));
             }
         });
     }
 
-    function createTimerCardHTML(timer) {
+    function createTimerCardElement(timer) {
+        const card = document.createElement('div');
+        card.className = 'timer-card status-' + timer.status;
+        card.id = 'card-' + timer.id;
+
         const personIcon = timer.person === 'oskar' ? '👦 Oskar' : '👧 Irma';
         let topicIcon = '🪥 Zähneputzen';
         if (timer.topic === 'anziehen') topicIcon = '👕 Anziehen';
@@ -298,13 +299,85 @@
             const remainingSec = Math.max(0, Math.round((timer.endTime - Date.now()) / 1000));
             const min = Math.floor(remainingSec / 60);
             const sec = remainingSec % 60;
-            displayTime = (min < 10 ? '0' : '') + min + ':' + (sec < 10 ? '0' : '') + sec;
+            const minStr = min < 10 ? '0' + min : '' + min;
+            const secStr = sec < 10 ? '0' + sec : '' + sec;
+            displayTime = minStr + ':' + secStr;
         } else {
-            const secToUse = timer.remainingSeconds !== undefined ? timer.remainingSeconds : timer.durationSeconds;
+            const secToUse = (timer.remainingSeconds !== undefined) ? timer.remainingSeconds : timer.durationSeconds;
             const min = Math.floor(secToUse / 60);
             const sec = secToUse % 60;
-            displayTime = (min < 10 ? '0' : '') + min + ':' + (sec < 10 ? '0' : '') + sec;
+            const minStr = min < 10 ? '0' + min : '' + min;
+            const secStr = sec < 10 ? '0' + sec : '' + sec;
+            displayTime = minStr + ':' + secStr;
         }
 
-        return [
-            '
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'timer-card-header';
+        
+        const badgePerson = document.createElement('span');
+        badgePerson.className = 'badge-person';
+        badgePerson.textContent = personIcon;
+        
+        const badgeTopic = document.createElement('span');
+        badgeTopic.className = 'badge-topic';
+        badgeTopic.textContent = topicIcon;
+        
+        headerDiv.appendChild(badgePerson);
+        headerDiv.appendChild(badgeTopic);
+
+        const bodyDiv = document.createElement('div');
+        bodyDiv.className = 'timer-card-body';
+        
+        const displayDiv = document.createElement('div');
+        displayDiv.className = 'timer-display';
+        displayDiv.id = 'display-' + timer.id;
+        displayDiv.textContent = displayTime;
+        
+        bodyDiv.appendChild(displayDiv);
+
+        const footerDiv = document.createElement('div');
+        footerDiv.className = 'timer-card-footer';
+
+        if (timer.status === 'running') {
+            const btnPause = document.createElement('button');
+            btnPause.className = 'btn btn-sm btn-warning';
+            btnPause.textContent = '⏸ Pause';
+            btnPause.onclick = function () { window.pauseTimer(timer.id); };
+            footerDiv.appendChild(btnPause);
+        } else {
+            const btnStart = document.createElement('button');
+            btnStart.className = 'btn btn-sm btn-success';
+            btnStart.textContent = '▶ Start';
+            btnStart.onclick = function () { window.startTimer(timer.id); };
+            footerDiv.appendChild(btnStart);
+        }
+
+        const btnReset = document.createElement('button');
+        btnReset.className = 'btn btn-sm btn-secondary';
+        btnReset.textContent = '🔄 Reset';
+        btnReset.onclick = function () { window.resetTimer(timer.id); };
+        footerDiv.appendChild(btnReset);
+
+        card.appendChild(headerDiv);
+        card.appendChild(bodyDiv);
+        card.appendChild(footerDiv);
+
+        return card;
+    }
+
+    // LocalStorage Hilfsfunktionen
+    function saveTimersToStorage() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(timers));
+    }
+
+    function loadTimersFromStorage() {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (stored) {
+            try {
+                timers = JSON.parse(stored);
+            } catch (e) {
+                timers = [];
+            }
+        }
+    }
+})();
