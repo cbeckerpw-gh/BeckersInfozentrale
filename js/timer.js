@@ -1,5 +1,5 @@
 /**
- * Hauptmodul für Aufgabentimer (v1.3 - Robuste Erkennung von Wiederholungen)
+ * Hauptmodul für Aufgabentimer (v1.4 - Bugfix Template-Strings & Layout)
  */
 (function () {
     'use strict';
@@ -54,7 +54,6 @@
             buttons.forEach(function (btn) {
                 btn.addEventListener('click', function () {
                     if (isPersonGroup) {
-                        // Mehrfachauswahl für Personen (Toggle)
                         const activeBtns = group.querySelectorAll('.btn-select.active');
                         if (this.classList.contains('active')) {
                             if (activeBtns.length > 1) {
@@ -64,7 +63,6 @@
                             this.classList.add('active');
                         }
                     } else {
-                        // Einzelauswahl
                         buttons.forEach(function (b) { b.classList.remove('active'); });
                         this.classList.add('active');
                     }
@@ -91,17 +89,14 @@
     function handleFormSubmit(e) {
         e.preventDefault();
 
-        // 1. Personen ermitteln
         const selectedPersons = getActivePersonValues();
         const personsToCreate = selectedPersons.length > 0 ? selectedPersons : ['oskar'];
 
-        // 2. Thema, Dauer & Tag/Zeitraum
         const topic = getActiveSelectValue('group-topic') || 'zahne';
         const durationMinutes = parseInt(getActiveSelectValue('group-duration') || '5', 10);
         const dayTargetRaw = getActiveSelectValue('group-day') || 'today';
         const repeatCountRaw = String(getActiveSelectValue('group-repeat') || '1').toLowerCase();
 
-        // Tage festlegen
         let targetDays = [];
         if (dayTargetRaw === 'all' || dayTargetRaw === 'alle' || dayTargetRaw === 'alle 3 tage') {
             targetDays = ['today', 'tomorrow', 'after-tomorrow'];
@@ -109,18 +104,16 @@
             targetDays = [dayTargetRaw];
         }
 
-        // Wiederholungen robust auswerten (unterstützt '2', '2x', '2x täglich' etc.)
         let repeatTimes = 1;
         if (repeatCountRaw.includes('2')) repeatTimes = 2;
         if (repeatCountRaw.includes('3')) repeatTimes = 3;
 
         const durationSec = durationMinutes * 60;
 
-        // 3. Karten in Schleife erstellen
         personsToCreate.forEach(function (person) {
             targetDays.forEach(function (day) {
                 for (let i = 1; i <= repeatTimes; i++) {
-                    const repeatLabel = repeatTimes > 1 ? ` (\({i}/\){repeatTimes})` : '';
+                    const repeatLabel = repeatTimes > 1 ? ' (' + i + '/' + repeatTimes + ')' : '';
 
                     const newTimer = {
                         id: 'timer-' + Date.now() + '-' + Math.floor(Math.random() * 10000) + '-' + i,
@@ -328,7 +321,7 @@
         const totalMinutes = MAX_CLOCK_MINUTES;
         
         if (endMinutes >= totalMinutes) {
-            return `M \({cx}\){cy - r} A \({r}\){r} 0 1 1 \({cx - 0.001}\){cy - r} Z`;
+            return 'M ' + cx + ' ' + (cy - r) + ' A ' + r + ' ' + r + ' 0 1 1 ' + (cx - 0.001) + ' ' + (cy - r) + ' Z';
         }
 
         const startAngle = (startMinutes / totalMinutes) * 360;
@@ -342,14 +335,14 @@
         const x2 = cx + (r * Math.cos(endRad));
         const y2 = cy + (r * Math.sin(endRad));
 
-        const largeArcFlag = (endAngle - startAngle) <= 180 ? "0" : "1";
+        const largeArcFlag = (endAngle - startAngle) <= 180 ? '0' : '1';
 
         return [
-            "M", cx, cy,
-            "L", x1, y1,
-            "A", r, r, 0, largeArcFlag, 1, x2, y2,
-            "Z"
-        ].join(" ");
+            'M', cx, cy,
+            'L', x1, y1,
+            'A', r, r, 0, largeArcFlag, 1, x2, y2,
+            'Z'
+        ].join(' ');
     }
 
     function createTimerCardElement(timer) {
@@ -390,18 +383,20 @@
 
         const infoDiv = document.createElement('div');
         infoDiv.style.display = 'flex';
-        infoDiv.style.alignItems = 'center';
-        infoDiv.style.gap = '8px';
+        infoDiv.style.flexDirection = 'column';
+        infoDiv.style.gap = '4px';
 
-        const titleDiv = document.createElement('span');
-        titleDiv.style.fontWeight = 'bold';
-        titleDiv.textContent = personIcon + ' ' + personName;
+        const personDiv = document.createElement('div');
+        personDiv.style.fontWeight = 'bold';
+        personDiv.textContent = personIcon + ' ' + personName;
 
-        const subtitleDiv = document.createElement('span');
-        subtitleDiv.textContent = topicIcon + ' ' + topicName + repeatSuffix;
+        const topicDiv = document.createElement('div');
+        topicDiv.style.fontSize = '0.9rem';
+        topicDiv.style.color = '#cccccc';
+        topicDiv.textContent = topicIcon + ' ' + topicName + repeatSuffix;
 
-        infoDiv.appendChild(titleDiv);
-        infoDiv.appendChild(subtitleDiv);
+        infoDiv.appendChild(personDiv);
+        infoDiv.appendChild(topicDiv);
 
         const clockContainer = document.createElement('div');
         clockContainer.style.display = 'flex';
@@ -409,31 +404,31 @@
         clockContainer.style.alignItems = 'center';
         clockContainer.style.gap = '4px';
 
-        const svgNS = "http://www.w3.org/2000/svg";
-        const svg = document.createElementNS(svgNS, "svg");
-        svg.setAttribute("viewBox", "0 0 36 36");
-        svg.style.width = "40px";
-        svg.style.height = "40px";
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', '0 0 36 36');
+        svg.style.width = '40px';
+        svg.style.height = '40px';
 
-        const bgCircle = document.createElementNS(svgNS, "circle");
-        bgCircle.setAttribute("cx", "18");
-        bgCircle.setAttribute("cy", "18");
-        bgCircle.setAttribute("r", "16");
-        bgCircle.setAttribute("fill", "#ffffff");
-        bgCircle.setAttribute("stroke", "#cccccc");
-        bgCircle.setAttribute("stroke-width", "1");
+        const bgCircle = document.createElementNS(svgNS, 'circle');
+        bgCircle.setAttribute('cx', '18');
+        bgCircle.setAttribute('cy', '18');
+        bgCircle.setAttribute('r', '16');
+        bgCircle.setAttribute('fill', '#ffffff');
+        bgCircle.setAttribute('stroke', '#cccccc');
+        bgCircle.setAttribute('stroke-width', '1');
 
         const minutesLeft = remainingSec / 60;
-        const pieSector = document.createElementNS(svgNS, "path");
-        pieSector.setAttribute("id", "pie-sector-" + timer.id);
-        pieSector.setAttribute("fill", "#e74c3c");
-        pieSector.setAttribute("d", describePieSector(18, 18, 16, 0, minutesLeft));
+        const pieSector = document.createElementNS(svgNS, 'path');
+        pieSector.setAttribute('id', 'pie-sector-' + timer.id);
+        pieSector.setAttribute('fill', '#e74c3c');
+        pieSector.setAttribute('d', describePieSector(18, 18, 16, 0, minutesLeft));
 
-        const centerDot = document.createElementNS(svgNS, "circle");
-        centerDot.setAttribute("cx", "18");
-        centerDot.setAttribute("cy", "18");
-        centerDot.setAttribute("r", "1.5");
-        centerDot.setAttribute("fill", "#333333");
+        const centerDot = document.createElementNS(svgNS, 'circle');
+        centerDot.setAttribute('cx', '18');
+        centerDot.setAttribute('cy', '18');
+        centerDot.setAttribute('r', '1.5');
+        centerDot.setAttribute('fill', '#333333');
 
         svg.appendChild(bgCircle);
         svg.appendChild(pieSector);
