@@ -1,5 +1,5 @@
 /**
- * Hauptmodul für Aufgabentimer (Restaurierte v1.0 mit visueller Uhr & Standby-Fix)
+ * Hauptmodul für Aufgabentimer (v1.0 mit rot eingefärbter visueller Uhr & Standby-Fix)
  */
 (function () {
     'use strict';
@@ -7,6 +7,7 @@
     let timers = [];
     let activeIntervals = {};
     const STORAGE_KEY = 'family_info_center_timers';
+    const MAX_CLOCK_MINUTES = 60; // Voller Kreis = 60 Minuten
 
     function initTimerModule() {
         loadTimersFromStorage();
@@ -107,7 +108,6 @@
         return activeBtn ? activeBtn.getAttribute('data-value') : null;
     }
 
-    // Timer Steuerung
     window.startTimer = function (id) {
         const timer = timers.find(function (t) { return t.id === id; });
         if (!timer) return;
@@ -170,17 +170,15 @@
         if (displayEl) {
             const min = Math.floor(remainingSec / 60);
             const sec = remainingSec % 60;
-            const minStr = min < 10 ? '0' + min : '' + min;
-            const secStr = sec < 10 ? '0' + sec : '' + sec;
-            displayEl.textContent = minStr + ':' + secStr;
+            displayEl.textContent = (min < 10 ? '0' + min : min) + ':' + (sec < 10 ? '0' + sec : sec);
         }
 
-        // Visuelle Uhr (SVG Progress Ring) aktualisieren
-        const progressPath = document.getElementById('progress-path-' + timer.id);
-        if (progressPath) {
-            const ratio = Math.max(0, remainingSec / timer.durationSeconds);
-            const strokeDashoffset = 100 * (1 - ratio);
-            progressPath.setAttribute('stroke-dashoffset', strokeDashoffset);
+        // Rotes SVG Pie-Segment (Kuchenstück) aktualisieren
+        const pieSector = document.getElementById('pie-sector-' + timer.id);
+        if (pieSector) {
+            const minutesLeft = remainingSec / 60;
+            const pathData = describePieSector(18, 18, 16, 0, minutesLeft);
+            pieSector.setAttribute('d', pathData);
         }
 
         return remainingSec <= 0;
@@ -206,7 +204,6 @@
         timer.endTime = null;
         timer.remainingSeconds = 0;
 
-        // Entfernt den erledigten Timer aus dem aktiven Speicher
         timers = timers.filter(function (t) { return t.id !== timer.id; });
 
         saveTimersToStorage();
@@ -270,11 +267,44 @@
         });
     }
 
-    // Erzeugt das v1.0 Card Element inklusive visueller SVG-Uhr
+    // Hilfsfunktion: Erzeugt SVG Path für rote Zeitfläche (Kuchenstück)
+    function describePieSector(cx, cy, r, startMinutes, endMinutes) {
+        const totalMinutes = MAX_CLOCK_MINUTES; // 60 Min = 360 Grad
+        
+        if (endMinutes >= totalMinutes) {
+            return `M \({cx}\){cy - r} A \({r}\){r} 0 1 1 \({cx - 0.001}\){cy - r} Z`;
+        }
+
+        const startAngle = (startMinutes / totalMinutes) * 360;
+        const endAngle = (endMinutes / totalMinutes) * 360;
+
+        const startRad = (startAngle - 90) * Math.PI / 180.0;
+        const endRad = (endAngle - 90) * Math.PI / 180.0;
+
+        const x1 = cx + (r * Math.cos(startRad));
+        const y1 = cy + (r * Math.sin(startRad));
+        const x2 = cx + (r * Math.cos(endRad));
+        const y2 = cy + (r * Math.sin(endRad));
+
+        const largeArcFlag = (endAngle - startAngle) <= 180 ? "0" : "1";
+
+        return [
+            "M", cx, cy,
+            "L", x1, y1,
+            "A", r, r, 0, largeArcFlag, 1, x2, y2,
+            "Z"
+        ].join(" ");
+    }
+
     function createTimerCardElement(timer) {
         const card = document.createElement('div');
         card.className = 'timer-card status-' + timer.status;
         card.id = 'card-' + timer.id;
+        card.style.display = 'flex';
+        card.style.alignItems = 'center';
+        card.style.justifyContent = 'space-between';
+        card.style.gap = '12px';
+        card.style.padding = '12px 16px';
 
         const personName = timer.person === 'oskar' ? 'Oskar' : 'Irma';
         const personIcon = timer.person === 'oskar' ? '👦' : '👧';
@@ -300,68 +330,89 @@
         const sec = remainingSec % 60;
         const displayTime = (min < 10 ? '0' + min : min) + ':' + (sec < 10 ? '0' + sec : sec);
 
-        const ratio = Math.max(0, remainingSec / timer.durationSeconds);
-        const strokeDashoffset = 100 * (1 - ratio);
-
         // 1. Info Block
         const infoDiv = document.createElement('div');
-        infoDiv.className = 'timer-info';
+        infoDiv.style.display = 'flex';
+        infoDiv.style.alignItems = 'center';
+        infoDiv.style.gap = '8px';
 
-        const titleDiv = document.createElement('div');
-        titleDiv.className = 'timer-title';
+        const titleDiv = document.createElement('span');
+        titleDiv.style.fontWeight = 'bold';
         titleDiv.textContent = personIcon + ' ' + personName;
 
-        const subtitleDiv = document.createElement('div');
-        subtitleDiv.className = 'timer-subtitle';
+        const subtitleDiv = document.createElement('span');
         subtitleDiv.textContent = topicIcon + ' ' + topicName;
 
         infoDiv.appendChild(titleDiv);
         infoDiv.appendChild(subtitleDiv);
 
-        // 2. Visuelle Uhr (Kindgerechtes SVG Zifferblatt) + Textzeitanzeige
+        // 2. Visuelle Uhr (SVG Zifferblatt mit rotem Kuchenstück)
         const clockContainer = document.createElement('div');
-        clockContainer.className = 'timer-visual-clock';
+        clockContainer.style.display = 'flex';
+        clockContainer.style.flexDirection = 'column';
+        clockContainer.style.alignItems = 'center';
+        clockContainer.style.gap = '4px';
 
         const svgNS = "http://www.w3.org/2000/svg";
         const svg = document.createElementNS(svgNS, "svg");
         svg.setAttribute("viewBox", "0 0 36 36");
-        svg.setAttribute("class", "clock-svg");
+        svg.style.width = "40px";
+        svg.style.height = "40px";
 
-        const bgCircle = document.createElementNS(svgNS, "path");
-        bgCircle.setAttribute("class", "clock-bg");
-        bgCircle.setAttribute("d", "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831");
+        // Weißer Hintergrund-Kreis (Zifferblatt)
+        const bgCircle = document.createElementNS(svgNS, "circle");
+        bgCircle.setAttribute("cx", "18");
+        bgCircle.setAttribute("cy", "18");
+        bgCircle.setAttribute("r", "16");
+        bgCircle.setAttribute("fill", "#ffffff");
+        bgCircle.setAttribute("stroke", "#cccccc");
+        bgCircle.setAttribute("stroke-width", "1");
 
-        const progressPath = document.createElementNS(svgNS, "path");
-        progressPath.setAttribute("class", "clock-progress");
-        progressPath.setAttribute("id", "progress-path-" + timer.id);
-        progressPath.setAttribute("stroke-dasharray", "100, 100");
-        progressPath.setAttribute("stroke-dashoffset", strokeDashoffset);
-        progressPath.setAttribute("d", "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831");
+        // Rotes Kuchenstück für verbleibende Zeit
+        const minutesLeft = remainingSec / 60;
+        const pieSector = document.createElementNS(svgNS, "path");
+        pieSector.setAttribute("id", "pie-sector-" + timer.id);
+        pieSector.setAttribute("fill", "#e74c3c"); // Rot
+        pieSector.setAttribute("d", describePieSector(18, 18, 16, 0, minutesLeft));
+
+        // Schwarzer Mittelpunkt (Zeiger-Achse)
+        const centerDot = document.createElementNS(svgNS, "circle");
+        centerDot.setAttribute("cx", "18");
+        centerDot.setAttribute("cy", "18");
+        centerDot.setAttribute("r", "1.5");
+        centerDot.setAttribute("fill", "#333333");
 
         svg.appendChild(bgCircle);
-        svg.appendChild(progressPath);
+        svg.appendChild(pieSector);
+        svg.appendChild(centerDot);
 
         const displayDiv = document.createElement('div');
-        displayDiv.className = 'timer-display';
         displayDiv.id = 'display-' + timer.id;
+        displayDiv.style.fontSize = '0.85rem';
+        displayDiv.style.fontWeight = 'bold';
         displayDiv.textContent = displayTime;
 
         clockContainer.appendChild(svg);
         clockContainer.appendChild(displayDiv);
 
-        // 3. Dynamischer Button (Grün = Start / Orange = Erledigt)
+        // 3. Dynamischer Button (Grün / Orange)
         const actionsDiv = document.createElement('div');
-        actionsDiv.className = 'timer-actions';
 
         const isRunning = timer.status === 'running';
         const actionBtn = document.createElement('button');
+        actionBtn.style.padding = '8px 16px';
+        actionBtn.style.borderRadius = '6px';
+        actionBtn.style.border = 'none';
+        actionBtn.style.color = '#ffffff';
+        actionBtn.style.fontWeight = 'bold';
+        actionBtn.style.cursor = 'pointer';
 
         if (isRunning) {
-            actionBtn.className = 'btn btn-sm btn-warning';
+            actionBtn.style.backgroundColor = '#ff9800'; // Orange
             actionBtn.textContent = '🟧 Fertig';
             actionBtn.setAttribute('onclick', 'finishTimerDirectly("' + timer.id + '")');
         } else {
-            actionBtn.className = 'btn btn-sm btn-success';
+            actionBtn.style.backgroundColor = '#4caf50'; // Grün
             actionBtn.textContent = '▶ Start';
             actionBtn.setAttribute('onclick', 'startTimer("' + timer.id + '")');
         }
