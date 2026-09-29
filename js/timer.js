@@ -1,5 +1,8 @@
 /**
- * Hauptmodul für Aufgabentimer (v1.0 Design & v1.1 Timestamp-Engine)
+ * Hauptmodul für Aufgabentimer
+ * - Standby-feste Zeiterfassung via Date.now() / endTime
+ * - Sauberes DOM-Rendering ohne String-Escaping-Probleme
+ * - Exakte v1.0 CSS-Klassen und Layout-Struktur
  */
 (function () {
     'use strict';
@@ -8,7 +11,6 @@
     let activeIntervals = {};
     const STORAGE_KEY = 'family_info_center_timers';
 
-    // Initialisierung beim Laden der Seite
     function initTimerModule() {
         loadTimersFromStorage();
         bindUIEvents();
@@ -22,7 +24,6 @@
         initTimerModule();
     }
 
-    // Event-Listener für UI und Tab-Sichtbarkeit
     function bindUIEvents() {
         const btnOpenModal = document.getElementById('btn-open-timer-modal');
         const btnCloseModal = document.getElementById('btn-close-modal');
@@ -39,7 +40,7 @@
 
         setupSelectGroups();
 
-        // Sofortige Aktualisierung beim Entsperren oder Tab-Wechsel
+        // Beim Entsperren des Bildschirms oder Tab-Wechsel Zeiten anhand des Zeitstempels abgleichen
         document.addEventListener('visibilitychange', function () {
             if (document.visibilityState === 'visible') {
                 updateAllTimersUI();
@@ -60,7 +61,6 @@
         });
     }
 
-    // Modal-Steuerung
     function openModal() {
         const modal = document.getElementById('timer-modal');
         if (modal) modal.classList.remove('hidden');
@@ -76,7 +76,6 @@
         if (modal) modal.classList.add('hidden');
     }
 
-    // Timer aus Formular erstellen
     function handleFormSubmit(e) {
         e.preventDefault();
 
@@ -91,6 +90,7 @@
             topic: topic,
             durationMinutes: durationMinutes,
             durationSeconds: durationMinutes * 60,
+            remainingSeconds: durationMinutes * 60,
             dayTarget: dayTarget,
             status: 'idle',
             endTime: null
@@ -115,8 +115,12 @@
         if (!timer) return;
 
         if (timer.status !== 'running') {
-            const remainingSec = (timer.remainingSeconds !== undefined) ? timer.remainingSeconds : timer.durationSeconds;
-            timer.endTime = Date.now() + (remainingSec * 1000);
+            const secToRun = (timer.remainingSeconds !== undefined && timer.remainingSeconds > 0) 
+                ? timer.remainingSeconds 
+                : timer.durationSeconds;
+            
+            timer.remainingSeconds = secToRun;
+            timer.endTime = Date.now() + (secToRun * 1000);
             timer.status = 'running';
             saveTimersToStorage();
 
@@ -156,24 +160,6 @@
         handleTimerFinished(timer);
     };
 
-    window.resetTimer = function (id) {
-        const timer = timers.find(function (t) { return t.id === id; });
-        if (!timer) return;
-
-        if (activeIntervals[id]) {
-            clearInterval(activeIntervals[id]);
-            delete activeIntervals[id];
-        }
-
-        timer.status = 'idle';
-        timer.endTime = null;
-        timer.remainingSeconds = timer.durationSeconds;
-
-        saveTimersToStorage();
-        renderAllTimers();
-    };
-
-    // Intervall-Ausführung pro laufendem Timer
     function runTimerInterval(timer) {
         if (activeIntervals[timer.id]) {
             clearInterval(activeIntervals[timer.id]);
@@ -198,6 +184,8 @@
         const remainingMs = timer.endTime - now;
         const remainingSec = Math.max(0, Math.round(remainingMs / 1000));
 
+        timer.remainingSeconds = remainingSec;
+
         const displayEl = document.getElementById('display-' + timer.id);
         if (displayEl) {
             const min = Math.floor(remainingSec / 60);
@@ -207,11 +195,7 @@
             displayEl.textContent = minStr + ':' + secStr;
         }
 
-        if (remainingSec <= 0) {
-            return true;
-        }
-
-        return false;
+        return remainingSec <= 0;
     }
 
     function updateAllTimersUI() {
@@ -233,6 +217,10 @@
         timer.status = 'finished';
         timer.endTime = null;
         timer.remainingSeconds = 0;
+
+        // Erledigte Aufgabe aus der aktiven Liste entfernen, damit sie verschwindet
+        timers = timers.filter(function (t) { return t.id !== timer.id; });
+
         saveTimersToStorage();
         renderAllTimers();
         showResultModal(timer);
@@ -242,20 +230,17 @@
         const resultModal = document.getElementById('result-modal');
         const resultTitle = document.getElementById('result-title');
         const resultText = document.getElementById('result-text');
-        const resultIcon = document.getElementById('result-icon');
 
         if (!resultModal) return;
 
         const personName = timer.person === 'oskar' ? 'Oskar' : 'Irma';
 
         if (resultTitle) resultTitle.textContent = '🎉 Super gemacht!';
-        if (resultText) resultText.textContent = personName + ' hat die Aufgabe zeitnah erledigt!';
-        if (resultIcon) resultIcon.textContent = '⏱️';
+        if (resultText) resultText.textContent = personName + ' hat die Aufgabe erledigt!';
 
         resultModal.classList.remove('hidden');
     }
 
-    // Automatischer Hintergrund-Sync / Wiederherstellung
     function startGlobalBackgroundSync() {
         timers.forEach(function (timer) {
             if (timer.status === 'running' && timer.endTime) {
@@ -269,7 +254,7 @@
         });
     }
 
-    // Rendering-Logik für die Spalten
+    // Rendering-Logik für Spalten
     function renderAllTimers() {
         const listToday = document.getElementById('list-today');
         const listTomorrow = document.getElementById('list-tomorrow');
@@ -279,7 +264,10 @@
         if (listTomorrow) listTomorrow.innerHTML = '';
         if (listAfterTomorrow) listAfterTomorrow.innerHTML = '';
 
-        timers.forEach(function (timer) {
+        // Nur unfertige Timer anzeigen
+        const activeTimers = timers.filter(function (t) { return t.status !== 'finished'; });
+
+        activeTimers.forEach(function (timer) {
             const cardElement = createTimerCardElement(timer);
 
             if (timer.dayTarget === 'today' && listToday) {
@@ -296,7 +284,7 @@
         });
     }
 
-    // Exakter v1.0 Kartenaufbau via DOM-Nodes
+    // Erzeugt die Card-Struktur über DOM-Knoten (verhindert Chat-Maskierungsfehler)
     function createTimerCardElement(timer) {
         const card = document.createElement('div');
         card.className = 'timer-card status-' + timer.status;
@@ -332,16 +320,16 @@
         const infoDiv = document.createElement('div');
         infoDiv.className = 'timer-info';
 
-        const personDiv = document.createElement('div');
-        personDiv.className = 'timer-person';
-        personDiv.textContent = personIcon + ' ' + personName;
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'timer-title';
+        titleDiv.textContent = personIcon + ' ' + personName + ' ' + topicIcon;
 
-        const topicDiv = document.createElement('div');
-        topicDiv.className = 'timer-topic';
-        topicDiv.textContent = topicIcon + ' ' + topicName;
+        const subtitleDiv = document.createElement('div');
+        subtitleDiv.className = 'timer-subtitle';
+        subtitleDiv.textContent = topicName;
 
-        infoDiv.appendChild(personDiv);
-        infoDiv.appendChild(topicDiv);
+        infoDiv.appendChild(titleDiv);
+        infoDiv.appendChild(subtitleDiv);
 
         // 2. Display Block
         const displayDiv = document.createElement('div');
@@ -349,38 +337,26 @@
         displayDiv.id = 'display-' + timer.id;
         displayDiv.textContent = displayTime;
 
-        // 3. Actions Block (v1.0 Buttons)
+        // 3. Actions Block
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'timer-actions';
 
-        if (timer.status === 'running') {
-            const btnPause = document.createElement('button');
-            btnPause.className = 'btn btn-sm btn-warning';
-            btnPause.textContent = '⏸ Pause';
-            btnPause.setAttribute('onclick', 'pauseTimer("' + timer.id + '")');
+        const isRunning = timer.status === 'running';
 
-            const btnFinish = document.createElement('button');
-            btnFinish.className = 'btn btn-sm btn-success';
-            btnFinish.textContent = '✅ Erledigt';
-            btnFinish.setAttribute('onclick', 'finishTimerDirectly("' + timer.id + '")');
+        const mainBtn = document.createElement('button');
+        mainBtn.className = 'btn btn-sm ' + (isRunning ? 'btn-warning' : 'btn-success');
+        mainBtn.textContent = isRunning ? '⏸ Pause' : '▶ Start';
+        mainBtn.setAttribute('onclick', (isRunning ? 'pauseTimer' : 'startTimer') + '("' + timer.id + '")');
 
-            actionsDiv.appendChild(btnPause);
-            actionsDiv.appendChild(btnFinish);
-        } else {
-            const btnStart = document.createElement('button');
-            btnStart.className = 'btn btn-sm btn-success';
-            btnStart.textContent = '▶ Start';
-            btnStart.setAttribute('onclick', 'startTimer("' + timer.id + '")');
+        const finishBtn = document.createElement('button');
+        finishBtn.className = 'btn btn-sm btn-outline';
+        finishBtn.textContent = '✅ Erledigt';
+        finishBtn.setAttribute('onclick', 'finishTimerDirectly("' + timer.id + '")');
 
-            const btnFinish = document.createElement('button');
-            btnFinish.className = 'btn btn-sm btn-outline';
-            btnFinish.textContent = '✅ Erledigt';
-            btnFinish.setAttribute('onclick', 'finishTimerDirectly("' + timer.id + '")');
+        actionsDiv.appendChild(mainBtn);
+        actionsDiv.appendChild(finishBtn);
 
-            actionsDiv.appendChild(btnStart);
-            actionsDiv.appendChild(btnFinish);
-        }
-
+        // Zusammenbauen
         card.appendChild(infoDiv);
         card.appendChild(displayDiv);
         card.appendChild(actionsDiv);
@@ -388,7 +364,6 @@
         return card;
     }
 
-    // LocalStorage
     function saveTimersToStorage() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(timers));
     }
