@@ -1,5 +1,5 @@
 /**
- * Hauptmodul für Aufgabentimer (v1.0 mit rot eingefärbter visueller Uhr & Standby-Fix)
+ * Hauptmodul für Aufgabentimer (v1.1 mit persönlicher Erfolgs-/Fehlgeschlagen-Meldung)
  */
 (function () {
     'use strict';
@@ -136,7 +136,7 @@
             delete activeIntervals[id];
         }
 
-        handleTimerFinished(timer);
+        handleTimerFinished(timer, true); // True = Manuell/Erfolgreich
     };
 
     function runTimerInterval(timer) {
@@ -149,7 +149,7 @@
             if (isFinished) {
                 clearInterval(activeIntervals[timer.id]);
                 delete activeIntervals[timer.id];
-                handleTimerFinished(timer);
+                handleTimerFinished(timer, false); // False = Zeit abgelaufen / Nicht geschafft
             }
         }, 1000);
 
@@ -165,7 +165,6 @@
 
         timer.remainingSeconds = remainingSec;
 
-        // Textzeit aktualisieren
         const displayEl = document.getElementById('display-' + timer.id);
         if (displayEl) {
             const min = Math.floor(remainingSec / 60);
@@ -173,7 +172,6 @@
             displayEl.textContent = (min < 10 ? '0' + min : min) + ':' + (sec < 10 ? '0' + sec : sec);
         }
 
-        // Rotes SVG Pie-Segment (Kuchenstück) aktualisieren
         const pieSector = document.getElementById('pie-sector-' + timer.id);
         if (pieSector) {
             const minutesLeft = remainingSec / 60;
@@ -193,13 +191,13 @@
                         clearInterval(activeIntervals[timer.id]);
                         delete activeIntervals[timer.id];
                     }
-                    handleTimerFinished(timer);
+                    handleTimerFinished(timer, false);
                 }
             }
         });
     }
 
-    function handleTimerFinished(timer) {
+    function handleTimerFinished(timer, isSuccess) {
         timer.status = 'finished';
         timer.endTime = null;
         timer.remainingSeconds = 0;
@@ -208,20 +206,28 @@
 
         saveTimersToStorage();
         renderAllTimers();
-        showResultModal(timer);
+        showResultModal(timer, isSuccess);
     }
 
-    function showResultModal(timer) {
+    function showResultModal(timer, isSuccess) {
         const resultModal = document.getElementById('result-modal');
         const resultTitle = document.getElementById('result-title');
         const resultText = document.getElementById('result-text');
+        const btnCloseResult = document.getElementById('btn-close-result');
 
         if (!resultModal) return;
 
         const personName = timer.person === 'oskar' ? 'Oskar' : 'Irma';
 
-        if (resultTitle) resultTitle.textContent = '🎉 Super gemacht!';
-        if (resultText) resultText.textContent = personName + ' hat die Aufgabe geschafft!';
+        if (isSuccess) {
+            if (resultTitle) resultTitle.textContent = '🎉 Super gemacht!';
+            if (resultText) resultText.textContent = personName + ', super gemacht!';
+            if (btnCloseResult) btnCloseResult.textContent = 'Super!';
+        } else {
+            if (resultTitle) resultTitle.textContent = '❌ Nicht geschafft';
+            if (resultText) resultText.textContent = personName + ', das hast Du leider nicht geschafft';
+            if (btnCloseResult) btnCloseResult.textContent = 'OK';
+        }
 
         resultModal.classList.remove('hidden');
     }
@@ -231,7 +237,7 @@
             if (timer.status === 'running' && timer.endTime) {
                 const now = Date.now();
                 if (now >= timer.endTime) {
-                    handleTimerFinished(timer);
+                    handleTimerFinished(timer, false);
                 } else {
                     runTimerInterval(timer);
                 }
@@ -267,9 +273,8 @@
         });
     }
 
-    // Hilfsfunktion: Erzeugt SVG Path für rote Zeitfläche (Kuchenstück)
     function describePieSector(cx, cy, r, startMinutes, endMinutes) {
-        const totalMinutes = MAX_CLOCK_MINUTES; // 60 Min = 360 Grad
+        const totalMinutes = MAX_CLOCK_MINUTES;
         
         if (endMinutes >= totalMinutes) {
             return `M \({cx}\){cy - r} A \({r}\){r} 0 1 1 \({cx - 0.001}\){cy - r} Z`;
@@ -330,7 +335,6 @@
         const sec = remainingSec % 60;
         const displayTime = (min < 10 ? '0' + min : min) + ':' + (sec < 10 ? '0' + sec : sec);
 
-        // 1. Info Block
         const infoDiv = document.createElement('div');
         infoDiv.style.display = 'flex';
         infoDiv.style.alignItems = 'center';
@@ -346,7 +350,6 @@
         infoDiv.appendChild(titleDiv);
         infoDiv.appendChild(subtitleDiv);
 
-        // 2. Visuelle Uhr (SVG Zifferblatt mit rotem Kuchenstück)
         const clockContainer = document.createElement('div');
         clockContainer.style.display = 'flex';
         clockContainer.style.flexDirection = 'column';
@@ -359,7 +362,6 @@
         svg.style.width = "40px";
         svg.style.height = "40px";
 
-        // Weißer Hintergrund-Kreis (Zifferblatt)
         const bgCircle = document.createElementNS(svgNS, "circle");
         bgCircle.setAttribute("cx", "18");
         bgCircle.setAttribute("cy", "18");
@@ -368,14 +370,12 @@
         bgCircle.setAttribute("stroke", "#cccccc");
         bgCircle.setAttribute("stroke-width", "1");
 
-        // Rotes Kuchenstück für verbleibende Zeit
         const minutesLeft = remainingSec / 60;
         const pieSector = document.createElementNS(svgNS, "path");
         pieSector.setAttribute("id", "pie-sector-" + timer.id);
-        pieSector.setAttribute("fill", "#e74c3c"); // Rot
+        pieSector.setAttribute("fill", "#e74c3c");
         pieSector.setAttribute("d", describePieSector(18, 18, 16, 0, minutesLeft));
 
-        // Schwarzer Mittelpunkt (Zeiger-Achse)
         const centerDot = document.createElementNS(svgNS, "circle");
         centerDot.setAttribute("cx", "18");
         centerDot.setAttribute("cy", "18");
@@ -395,7 +395,6 @@
         clockContainer.appendChild(svg);
         clockContainer.appendChild(displayDiv);
 
-        // 3. Dynamischer Button (Grün / Orange)
         const actionsDiv = document.createElement('div');
 
         const isRunning = timer.status === 'running';
@@ -408,18 +407,17 @@
         actionBtn.style.cursor = 'pointer';
 
         if (isRunning) {
-            actionBtn.style.backgroundColor = '#ff9800'; // Orange
+            actionBtn.style.backgroundColor = '#ff9800';
             actionBtn.textContent = '🟧 Fertig';
             actionBtn.setAttribute('onclick', 'finishTimerDirectly("' + timer.id + '")');
         } else {
-            actionBtn.style.backgroundColor = '#4caf50'; // Grün
+            actionBtn.style.backgroundColor = '#4caf50';
             actionBtn.textContent = '▶ Start';
             actionBtn.setAttribute('onclick', 'startTimer("' + timer.id + '")');
         }
 
         actionsDiv.appendChild(actionBtn);
 
-        // Zusammenbauen
         card.appendChild(infoDiv);
         card.appendChild(clockContainer);
         card.appendChild(actionsDiv);
