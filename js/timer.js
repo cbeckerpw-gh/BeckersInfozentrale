@@ -118,7 +118,7 @@
 
         if (timer.status !== 'running') {
             // Endzeitpunkt basierend auf verbleibender Dauer festlegen
-            const remainingSec = timer.remainingSeconds || timer.durationSeconds;
+            const remainingSec = timer.remainingSeconds !== undefined ? timer.remainingSeconds : timer.durationSeconds;
             timer.endTime = Date.now() + (remainingSec * 1000);
             timer.status = 'running';
             saveTimersToStorage();
@@ -240,7 +240,7 @@
         const personName = timer.person === 'oskar' ? 'Oskar' : 'Irma';
         
         if (resultTitle) resultTitle.textContent = '🎉 Super gemacht!';
-        if (resultText) resultText.textContent = personName + ' hat die Aufgabe Zeit-nah erledigt!';
+        if (resultText) resultText.textContent = personName + ' hat die Aufgabe zeitnah erledigt!';
         if (resultIcon) resultIcon.textContent = '⏱️';
 
         resultModal.classList.remove('hidden');
@@ -306,39 +306,5 @@
             displayTime = (min < 10 ? '0' : '') + min + ':' + (sec < 10 ? '0' : '') + sec;
         }
 
-        return `
-            <div class="timer-card status-\({timer.status}" id="card-\){timer.id}">
-                <div class="timer-card-header">
-                    <span class="badge-person">${personIcon}</span>
-                    <span class="badge-topic">${topicIcon}</span>
-                </div>
-                <div class="timer-card-body">
-                    <div class="timer-display" id="display-\({timer.id}">\){displayTime}</div>
-                </div>
-                <div class="timer-card-footer">
-                    ${timer.status !== 'running' 
-                        ? `<button class="btn btn-sm btn-success" onclick="startTimer('${timer.id}')">▶ Start</button>`
-                        : `<button class="btn btn-sm btn-warning" onclick="pauseTimer('${timer.id}')">⏸ Pause</button>`
-                    }
-                    <button class="btn btn-sm btn-secondary" onclick="resetTimer('${timer.id}')">🔄 Reset</button>
-                </div>
-            </div>
-        `;
-    }
-
-    // LocalStorage Hilfsfunktionen
-    function saveTimersToStorage() {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(timers));
-    }
-
-    function loadTimersFromStorage() {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            try {
-                timers = JSON.parse(stored);
-            } catch (e) {
-                timers = [];
-            }
-        }
-    }
-})();
+        return [
+            '
