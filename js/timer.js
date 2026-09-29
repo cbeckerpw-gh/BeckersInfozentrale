@@ -1,8 +1,5 @@
 /**
- * Hauptmodul für Aufgabentimer
- * - Standby-feste Zeiterfassung via Date.now() / endTime
- * - Sauberes DOM-Rendering ohne String-Escaping-Probleme
- * - Exakte v1.0 CSS-Klassen und Layout-Struktur
+ * Hauptmodul für Aufgabentimer (Restaurierte v1.0 mit visueller Uhr & Standby-Fix)
  */
 (function () {
     'use strict';
@@ -40,7 +37,6 @@
 
         setupSelectGroups();
 
-        // Beim Entsperren des Bildschirms oder Tab-Wechsel Zeiten anhand des Zeitstempels abgleichen
         document.addEventListener('visibilitychange', function () {
             if (document.visibilityState === 'visible') {
                 updateAllTimersUI();
@@ -84,13 +80,15 @@
         const durationMinutes = parseInt(getActiveSelectValue('group-duration') || '5', 10);
         const dayTarget = getActiveSelectValue('group-day') || 'today';
 
+        const durationSec = durationMinutes * 60;
+
         const newTimer = {
             id: 'timer-' + Date.now() + '-' + Math.floor(Math.random() * 1000),
             person: person,
             topic: topic,
             durationMinutes: durationMinutes,
-            durationSeconds: durationMinutes * 60,
-            remainingSeconds: durationMinutes * 60,
+            durationSeconds: durationSec,
+            remainingSeconds: durationSec,
             dayTarget: dayTarget,
             status: 'idle',
             endTime: null
@@ -127,25 +125,6 @@
             runTimerInterval(timer);
             renderAllTimers();
         }
-    };
-
-    window.pauseTimer = function (id) {
-        const timer = timers.find(function (t) { return t.id === id; });
-        if (!timer || timer.status !== 'running') return;
-
-        const now = Date.now();
-        const remainingMs = timer.endTime - now;
-        timer.remainingSeconds = Math.max(0, Math.round(remainingMs / 1000));
-        timer.status = 'paused';
-        timer.endTime = null;
-
-        if (activeIntervals[id]) {
-            clearInterval(activeIntervals[id]);
-            delete activeIntervals[id];
-        }
-
-        saveTimersToStorage();
-        renderAllTimers();
     };
 
     window.finishTimerDirectly = function (id) {
@@ -186,6 +165,7 @@
 
         timer.remainingSeconds = remainingSec;
 
+        // Textzeit aktualisieren
         const displayEl = document.getElementById('display-' + timer.id);
         if (displayEl) {
             const min = Math.floor(remainingSec / 60);
@@ -193,6 +173,14 @@
             const minStr = min < 10 ? '0' + min : '' + min;
             const secStr = sec < 10 ? '0' + sec : '' + sec;
             displayEl.textContent = minStr + ':' + secStr;
+        }
+
+        // Visuelle Uhr (SVG Progress Ring) aktualisieren
+        const progressPath = document.getElementById('progress-path-' + timer.id);
+        if (progressPath) {
+            const ratio = Math.max(0, remainingSec / timer.durationSeconds);
+            const strokeDashoffset = 100 * (1 - ratio);
+            progressPath.setAttribute('stroke-dashoffset', strokeDashoffset);
         }
 
         return remainingSec <= 0;
@@ -218,7 +206,7 @@
         timer.endTime = null;
         timer.remainingSeconds = 0;
 
-        // Erledigte Aufgabe aus der aktiven Liste entfernen, damit sie verschwindet
+        // Entfernt den erledigten Timer aus dem aktiven Speicher
         timers = timers.filter(function (t) { return t.id !== timer.id; });
 
         saveTimersToStorage();
@@ -236,7 +224,7 @@
         const personName = timer.person === 'oskar' ? 'Oskar' : 'Irma';
 
         if (resultTitle) resultTitle.textContent = '🎉 Super gemacht!';
-        if (resultText) resultText.textContent = personName + ' hat die Aufgabe erledigt!';
+        if (resultText) resultText.textContent = personName + ' hat die Aufgabe geschafft!';
 
         resultModal.classList.remove('hidden');
     }
@@ -254,7 +242,6 @@
         });
     }
 
-    // Rendering-Logik für Spalten
     function renderAllTimers() {
         const listToday = document.getElementById('list-today');
         const listTomorrow = document.getElementById('list-tomorrow');
@@ -264,7 +251,6 @@
         if (listTomorrow) listTomorrow.innerHTML = '';
         if (listAfterTomorrow) listAfterTomorrow.innerHTML = '';
 
-        // Nur unfertige Timer anzeigen
         const activeTimers = timers.filter(function (t) { return t.status !== 'finished'; });
 
         activeTimers.forEach(function (timer) {
@@ -284,7 +270,7 @@
         });
     }
 
-    // Erzeugt die Card-Struktur über DOM-Knoten (verhindert Chat-Maskierungsfehler)
+    // Erzeugt das v1.0 Card Element inklusive visueller SVG-Uhr
     function createTimerCardElement(timer) {
         const card = document.createElement('div');
         card.className = 'timer-card status-' + timer.status;
@@ -303,18 +289,19 @@
             topicIcon = '🧸';
         }
 
-        let displayTime = '00:00';
+        let remainingSec = timer.durationSeconds;
         if (timer.status === 'running' && timer.endTime) {
-            const remainingSec = Math.max(0, Math.round((timer.endTime - Date.now()) / 1000));
-            const min = Math.floor(remainingSec / 60);
-            const sec = remainingSec % 60;
-            displayTime = (min < 10 ? '0' + min : min) + ':' + (sec < 10 ? '0' + sec : sec);
-        } else {
-            const secToUse = (timer.remainingSeconds !== undefined) ? timer.remainingSeconds : timer.durationSeconds;
-            const min = Math.floor(secToUse / 60);
-            const sec = secToUse % 60;
-            displayTime = (min < 10 ? '0' + min : min) + ':' + (sec < 10 ? '0' + sec : sec);
+            remainingSec = Math.max(0, Math.round((timer.endTime - Date.now()) / 1000));
+        } else if (timer.remainingSeconds !== undefined) {
+            remainingSec = timer.remainingSeconds;
         }
+
+        const min = Math.floor(remainingSec / 60);
+        const sec = remainingSec % 60;
+        const displayTime = (min < 10 ? '0' + min : min) + ':' + (sec < 10 ? '0' + sec : sec);
+
+        const ratio = Math.max(0, remainingSec / timer.durationSeconds);
+        const strokeDashoffset = 100 * (1 - ratio);
 
         // 1. Info Block
         const infoDiv = document.createElement('div');
@@ -322,43 +309,68 @@
 
         const titleDiv = document.createElement('div');
         titleDiv.className = 'timer-title';
-        titleDiv.textContent = personIcon + ' ' + personName + ' ' + topicIcon;
+        titleDiv.textContent = personIcon + ' ' + personName;
 
         const subtitleDiv = document.createElement('div');
         subtitleDiv.className = 'timer-subtitle';
-        subtitleDiv.textContent = topicName;
+        subtitleDiv.textContent = topicIcon + ' ' + topicName;
 
         infoDiv.appendChild(titleDiv);
         infoDiv.appendChild(subtitleDiv);
 
-        // 2. Display Block
+        // 2. Visuelle Uhr (Kindgerechtes SVG Zifferblatt) + Textzeitanzeige
+        const clockContainer = document.createElement('div');
+        clockContainer.className = 'timer-visual-clock';
+
+        const svgNS = "http://www.w3.org/2000/svg";
+        const svg = document.createElementNS(svgNS, "svg");
+        svg.setAttribute("viewBox", "0 0 36 36");
+        svg.setAttribute("class", "clock-svg");
+
+        const bgCircle = document.createElementNS(svgNS, "path");
+        bgCircle.setAttribute("class", "clock-bg");
+        bgCircle.setAttribute("d", "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831");
+
+        const progressPath = document.createElementNS(svgNS, "path");
+        progressPath.setAttribute("class", "clock-progress");
+        progressPath.setAttribute("id", "progress-path-" + timer.id);
+        progressPath.setAttribute("stroke-dasharray", "100, 100");
+        progressPath.setAttribute("stroke-dashoffset", strokeDashoffset);
+        progressPath.setAttribute("d", "M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831");
+
+        svg.appendChild(bgCircle);
+        svg.appendChild(progressPath);
+
         const displayDiv = document.createElement('div');
         displayDiv.className = 'timer-display';
         displayDiv.id = 'display-' + timer.id;
         displayDiv.textContent = displayTime;
 
-        // 3. Actions Block
+        clockContainer.appendChild(svg);
+        clockContainer.appendChild(displayDiv);
+
+        // 3. Dynamischer Button (Grün = Start / Orange = Erledigt)
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'timer-actions';
 
         const isRunning = timer.status === 'running';
+        const actionBtn = document.createElement('button');
 
-        const mainBtn = document.createElement('button');
-        mainBtn.className = 'btn btn-sm ' + (isRunning ? 'btn-warning' : 'btn-success');
-        mainBtn.textContent = isRunning ? '⏸ Pause' : '▶ Start';
-        mainBtn.setAttribute('onclick', (isRunning ? 'pauseTimer' : 'startTimer') + '("' + timer.id + '")');
+        if (isRunning) {
+            actionBtn.className = 'btn btn-sm btn-warning';
+            actionBtn.textContent = '🟧 Fertig';
+            actionBtn.setAttribute('onclick', 'finishTimerDirectly("' + timer.id + '")');
+        } else {
+            actionBtn.className = 'btn btn-sm btn-success';
+            actionBtn.textContent = '▶ Start';
+            actionBtn.setAttribute('onclick', 'startTimer("' + timer.id + '")');
+        }
 
-        const finishBtn = document.createElement('button');
-        finishBtn.className = 'btn btn-sm btn-outline';
-        finishBtn.textContent = '✅ Erledigt';
-        finishBtn.setAttribute('onclick', 'finishTimerDirectly("' + timer.id + '")');
-
-        actionsDiv.appendChild(mainBtn);
-        actionsDiv.appendChild(finishBtn);
+        actionsDiv.appendChild(actionBtn);
 
         // Zusammenbauen
         card.appendChild(infoDiv);
-        card.appendChild(displayDiv);
+        card.appendChild(clockContainer);
         card.appendChild(actionsDiv);
 
         return card;
