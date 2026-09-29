@@ -1,5 +1,5 @@
 /**
- * Hauptmodul für Aufgabentimer (v1.2 - Mehrfachauswahl, Zeitraum & Tageswiederholungen)
+ * Hauptmodul für Aufgabentimer (v1.3 - Robuste Erkennung von Wiederholungen)
  */
 (function () {
     'use strict';
@@ -54,10 +54,9 @@
             buttons.forEach(function (btn) {
                 btn.addEventListener('click', function () {
                     if (isPersonGroup) {
-                        // Mehrfachauswahl für Personen erlauben (Toggle)
+                        // Mehrfachauswahl für Personen (Toggle)
                         const activeBtns = group.querySelectorAll('.btn-select.active');
                         if (this.classList.contains('active')) {
-                            // Mindestens eine Person muss ausgewählt bleiben
                             if (activeBtns.length > 1) {
                                 this.classList.remove('active');
                             }
@@ -65,7 +64,7 @@
                             this.classList.add('active');
                         }
                     } else {
-                        // Einzelauswahl für Themen, Dauer, Zeitraum, Wiederholungen
+                        // Einzelauswahl
                         buttons.forEach(function (b) { b.classList.remove('active'); });
                         this.classList.add('active');
                     }
@@ -92,7 +91,7 @@
     function handleFormSubmit(e) {
         e.preventDefault();
 
-        // 1. Personen ermitteln (können mehrere sein)
+        // 1. Personen ermitteln
         const selectedPersons = getActivePersonValues();
         const personsToCreate = selectedPersons.length > 0 ? selectedPersons : ['oskar'];
 
@@ -100,34 +99,34 @@
         const topic = getActiveSelectValue('group-topic') || 'zahne';
         const durationMinutes = parseInt(getActiveSelectValue('group-duration') || '5', 10);
         const dayTargetRaw = getActiveSelectValue('group-day') || 'today';
-        const repeatCountRaw = getActiveSelectValue('group-repeat') || '1x'; // '1x', '2x', '3x'
+        const repeatCountRaw = String(getActiveSelectValue('group-repeat') || '1').toLowerCase();
 
         // Tage festlegen
         let targetDays = [];
-        if (dayTargetRaw === 'all' || dayTargetRaw === 'alle') {
+        if (dayTargetRaw === 'all' || dayTargetRaw === 'alle' || dayTargetRaw === 'alle 3 tage') {
             targetDays = ['today', 'tomorrow', 'after-tomorrow'];
         } else {
             targetDays = [dayTargetRaw];
         }
 
-        // Wiederholungen festlegen
+        // Wiederholungen robust auswerten (unterstützt '2', '2x', '2x täglich' etc.)
         let repeatTimes = 1;
-        if (repeatCountRaw === '2x' || repeatCountRaw === '2x täglich') repeatTimes = 2;
-        if (repeatCountRaw === '3x' || repeatCountRaw === '3x täglich') repeatTimes = 3;
+        if (repeatCountRaw.includes('2')) repeatTimes = 2;
+        if (repeatCountRaw.includes('3')) repeatTimes = 3;
 
         const durationSec = durationMinutes * 60;
 
-        // 3. Karten in Schleife erstellen (Personen x Tage x Wiederholungen)
+        // 3. Karten in Schleife erstellen
         personsToCreate.forEach(function (person) {
             targetDays.forEach(function (day) {
                 for (let i = 1; i <= repeatTimes; i++) {
                     const repeatLabel = repeatTimes > 1 ? ` (\({i}/\){repeatTimes})` : '';
 
                     const newTimer = {
-                        id: 'timer-' + Date.now() + '-' + Math.floor(Math.random() * 10000),
+                        id: 'timer-' + Date.now() + '-' + Math.floor(Math.random() * 10000) + '-' + i,
                         person: person,
                         topic: topic,
-                        repeatLabel: repeatLabel, // Zähler z. B. (1/2)
+                        repeatLabel: repeatLabel,
                         durationMinutes: durationMinutes,
                         durationSeconds: durationSec,
                         remainingSeconds: durationSec,
@@ -376,7 +375,6 @@
             topicIcon = '🧸';
         }
 
-        // Wiederholungsanzeige wie (1/2) anhängen
         const repeatSuffix = timer.repeatLabel || '';
 
         let remainingSec = timer.durationSeconds;
