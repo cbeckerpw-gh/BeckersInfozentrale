@@ -284,15 +284,23 @@
         });
     }
 
-    function createTimerCardElement(timer) {
+    function createTimerCardHTML(timer) {
         const card = document.createElement('div');
         card.className = 'timer-card status-' + timer.status;
         card.id = 'card-' + timer.id;
 
-        const personIcon = timer.person === 'oskar' ? '👦 Oskar' : '👧 Irma';
-        let topicIcon = '🪥 Zähneputzen';
-        if (timer.topic === 'anziehen') topicIcon = '👕 Anziehen';
-        if (timer.topic === 'aufraumen') topicIcon = '🧸 Aufräumen';
+        const personName = timer.person === 'oskar' ? 'Oskar' : 'Irma';
+        const personIcon = timer.person === 'oskar' ? '👦' : '👧';
+
+        let topicName = 'Zähneputzen';
+        let topicIcon = '🪥';
+        if (timer.topic === 'anziehen') {
+            topicName = 'Anziehen';
+            topicIcon = '👕';
+        } else if (timer.topic === 'aufraumen') {
+            topicName = 'Aufräumen';
+            topicIcon = '🧸';
+        }
 
         let displayTime = '00:00';
         if (timer.status === 'running' && timer.endTime) {
@@ -311,56 +319,55 @@
             displayTime = minStr + ':' + secStr;
         }
 
-        const headerDiv = document.createElement('div');
-        headerDiv.className = 'timer-card-header';
-        
-        const badgePerson = document.createElement('span');
-        badgePerson.className = 'badge-person';
-        badgePerson.textContent = personIcon;
-        
-        const badgeTopic = document.createElement('span');
-        badgeTopic.className = 'badge-topic';
-        badgeTopic.textContent = topicIcon;
-        
-        headerDiv.appendChild(badgePerson);
-        headerDiv.appendChild(badgeTopic);
+        // 1. Info Block (.timer-info)
+        const infoDiv = document.createElement('div');
+        infoDiv.className = 'timer-info';
 
-        const bodyDiv = document.createElement('div');
-        bodyDiv.className = 'timer-card-body';
-        
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'timer-title';
+        titleDiv.textContent = personIcon + ' ' + personName + ' ' + topicIcon;
+
+        const subTitleDiv = document.createElement('div');
+        subTitleDiv.className = 'timer-subtitle';
+        subTitleDiv.textContent = topicName;
+
+        infoDiv.appendChild(titleDiv);
+        infoDiv.appendChild(subTitleDiv);
+
+        // 2. Display Block (.timer-display)
         const displayDiv = document.createElement('div');
         displayDiv.className = 'timer-display';
         displayDiv.id = 'display-' + timer.id;
         displayDiv.textContent = displayTime;
-        
-        bodyDiv.appendChild(displayDiv);
 
-        const footerDiv = document.createElement('div');
-        footerDiv.className = 'timer-card-footer';
+        // 3. Actions Block (.timer-actions)
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'timer-actions';
 
         if (timer.status === 'running') {
             const btnPause = document.createElement('button');
             btnPause.className = 'btn btn-sm btn-warning';
             btnPause.textContent = '⏸ Pause';
-            btnPause.onclick = function () { window.pauseTimer(timer.id); };
-            footerDiv.appendChild(btnPause);
+            btnPause.setAttribute('onclick', 'pauseTimer("' + timer.id + '")');
+            actionsDiv.appendChild(btnPause);
         } else {
             const btnStart = document.createElement('button');
             btnStart.className = 'btn btn-sm btn-success';
             btnStart.textContent = '▶ Start';
-            btnStart.onclick = function () { window.startTimer(timer.id); };
-            footerDiv.appendChild(btnStart);
+            btnStart.setAttribute('onclick', 'startTimer("' + timer.id + '")');
+            actionsDiv.appendChild(btnStart);
         }
 
         const btnReset = document.createElement('button');
         btnReset.className = 'btn btn-sm btn-secondary';
         btnReset.textContent = '🔄 Reset';
-        btnReset.onclick = function () { window.resetTimer(timer.id); };
-        footerDiv.appendChild(btnReset);
+        btnReset.setAttribute('onclick', 'resetTimer("' + timer.id + '")');
+        actionsDiv.appendChild(btnReset);
 
-        card.appendChild(headerDiv);
-        card.appendChild(bodyDiv);
-        card.appendChild(footerDiv);
+        // Zusammenfügen in exakter v1.0 Hierarchie
+        card.appendChild(infoDiv);
+        card.appendChild(displayDiv);
+        card.appendChild(actionsDiv);
 
         return card;
     }
