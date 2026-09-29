@@ -1,6 +1,5 @@
 /**
- * Hauptmodul für Aufgabentimer (v1.1)
- * Nutzt Timestamp-basierte Berechnung (Date.now()) für exakte Hintergrund- und Standby-Zeiten.
+ * Hauptmodul für Aufgabentimer (v1.0 Design & v1.1 Timestamp-Engine)
  */
 (function () {
     'use strict';
@@ -110,7 +109,7 @@
         return activeBtn ? activeBtn.getAttribute('data-value') : null;
     }
 
-    // Timer Steuerung: Start / Pause / Reset
+    // Timer Steuerung
     window.startTimer = function (id) {
         const timer = timers.find(function (t) { return t.id === id; });
         if (!timer) return;
@@ -122,6 +121,7 @@
             saveTimersToStorage();
 
             runTimerInterval(timer);
+            renderAllTimers();
         }
     };
 
@@ -142,6 +142,18 @@
 
         saveTimersToStorage();
         renderAllTimers();
+    };
+
+    window.finishTimerDirectly = function (id) {
+        const timer = timers.find(function (t) { return t.id === id; });
+        if (!timer) return;
+
+        if (activeIntervals[id]) {
+            clearInterval(activeIntervals[id]);
+            delete activeIntervals[id];
+        }
+
+        handleTimerFinished(timer);
     };
 
     window.resetTimer = function (id) {
@@ -243,7 +255,7 @@
         resultModal.classList.remove('hidden');
     }
 
-    // Automatischer Hintergrund-Sync / Wiederherstellung beim Laden
+    // Automatischer Hintergrund-Sync / Wiederherstellung
     function startGlobalBackgroundSync() {
         timers.forEach(function (timer) {
             if (timer.status === 'running' && timer.endTime) {
@@ -257,7 +269,7 @@
         });
     }
 
-    // Rendering-Logik für die 3 Spalten (Heute, Morgen, Übermorgen)
+    // Rendering-Logik für die Spalten
     function renderAllTimers() {
         const listToday = document.getElementById('list-today');
         const listTomorrow = document.getElementById('list-tomorrow');
@@ -284,6 +296,7 @@
         });
     }
 
+    // Exakter v1.0 Kartenaufbau via DOM-Nodes
     function createTimerCardElement(timer) {
         const card = document.createElement('div');
         card.className = 'timer-card status-' + timer.status;
@@ -307,40 +320,36 @@
             const remainingSec = Math.max(0, Math.round((timer.endTime - Date.now()) / 1000));
             const min = Math.floor(remainingSec / 60);
             const sec = remainingSec % 60;
-            const minStr = min < 10 ? '0' + min : '' + min;
-            const secStr = sec < 10 ? '0' + sec : '' + sec;
-            displayTime = minStr + ':' + secStr;
+            displayTime = (min < 10 ? '0' + min : min) + ':' + (sec < 10 ? '0' + sec : sec);
         } else {
             const secToUse = (timer.remainingSeconds !== undefined) ? timer.remainingSeconds : timer.durationSeconds;
             const min = Math.floor(secToUse / 60);
             const sec = secToUse % 60;
-            const minStr = min < 10 ? '0' + min : '' + min;
-            const secStr = sec < 10 ? '0' + sec : '' + sec;
-            displayTime = minStr + ':' + secStr;
+            displayTime = (min < 10 ? '0' + min : min) + ':' + (sec < 10 ? '0' + sec : sec);
         }
 
-        // 1. Info Block (.timer-info)
+        // 1. Info Block
         const infoDiv = document.createElement('div');
         infoDiv.className = 'timer-info';
 
-        const titleDiv = document.createElement('div');
-        titleDiv.className = 'timer-title';
-        titleDiv.textContent = personIcon + ' ' + personName + ' ' + topicIcon;
+        const personDiv = document.createElement('div');
+        personDiv.className = 'timer-person';
+        personDiv.textContent = personIcon + ' ' + personName;
 
-        const subTitleDiv = document.createElement('div');
-        subTitleDiv.className = 'timer-subtitle';
-        subTitleDiv.textContent = topicName;
+        const topicDiv = document.createElement('div');
+        topicDiv.className = 'timer-topic';
+        topicDiv.textContent = topicIcon + ' ' + topicName;
 
-        infoDiv.appendChild(titleDiv);
-        infoDiv.appendChild(subTitleDiv);
+        infoDiv.appendChild(personDiv);
+        infoDiv.appendChild(topicDiv);
 
-        // 2. Display Block (.timer-display)
+        // 2. Display Block
         const displayDiv = document.createElement('div');
         displayDiv.className = 'timer-display';
         displayDiv.id = 'display-' + timer.id;
         displayDiv.textContent = displayTime;
 
-        // 3. Actions Block (.timer-actions)
+        // 3. Actions Block (v1.0 Buttons)
         const actionsDiv = document.createElement('div');
         actionsDiv.className = 'timer-actions';
 
@@ -349,22 +358,29 @@
             btnPause.className = 'btn btn-sm btn-warning';
             btnPause.textContent = '⏸ Pause';
             btnPause.setAttribute('onclick', 'pauseTimer("' + timer.id + '")');
+
+            const btnFinish = document.createElement('button');
+            btnFinish.className = 'btn btn-sm btn-success';
+            btnFinish.textContent = '✅ Erledigt';
+            btnFinish.setAttribute('onclick', 'finishTimerDirectly("' + timer.id + '")');
+
             actionsDiv.appendChild(btnPause);
+            actionsDiv.appendChild(btnFinish);
         } else {
             const btnStart = document.createElement('button');
             btnStart.className = 'btn btn-sm btn-success';
             btnStart.textContent = '▶ Start';
             btnStart.setAttribute('onclick', 'startTimer("' + timer.id + '")');
+
+            const btnFinish = document.createElement('button');
+            btnFinish.className = 'btn btn-sm btn-outline';
+            btnFinish.textContent = '✅ Erledigt';
+            btnFinish.setAttribute('onclick', 'finishTimerDirectly("' + timer.id + '")');
+
             actionsDiv.appendChild(btnStart);
+            actionsDiv.appendChild(btnFinish);
         }
 
-        const btnReset = document.createElement('button');
-        btnReset.className = 'btn btn-sm btn-secondary';
-        btnReset.textContent = '🔄 Reset';
-        btnReset.setAttribute('onclick', 'resetTimer("' + timer.id + '")');
-        actionsDiv.appendChild(btnReset);
-
-        // Zusammenfügen in exakter v1.0 Hierarchie
         card.appendChild(infoDiv);
         card.appendChild(displayDiv);
         card.appendChild(actionsDiv);
@@ -372,7 +388,7 @@
         return card;
     }
 
-    // LocalStorage Hilfsfunktionen
+    // LocalStorage
     function saveTimersToStorage() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(timers));
     }
