@@ -284,7 +284,7 @@
         });
     }
 
-    function createTimerCardHTML(timer) {
+    function createTimerCardElement(timer) {
         const card = document.createElement('div');
         card.className = 'timer-card status-' + timer.status;
         card.id = 'card-' + timer.id;
