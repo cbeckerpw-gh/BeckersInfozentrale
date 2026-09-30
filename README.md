@@ -5,7 +5,12 @@ Ein serverloses, hochsicheres Dashboard optimiert für GitHub Pages, ausgelegt f
 ## Features
 - **3-Spalten-Planer**: Heute, Morgen, Übermorgen.
 - **Namens- & Rechte-Parsing**: Unterscheidung nach Papa, Mama, Oskar, Irma sowie Kombi-Karten (z.B. "Oskar + Irma - ...").
-- **Visual Time-Timer**: Kindgerechte analoge Uhr mit 60-Minuten-Skala, Tortengrafik, Raketen-Belohnungs-Animation 🎉.
+- **Visual Time-Timer**: 
+  - Kindgerechte analoge Uhr mit 60-Minuten-Skala und schrumpfender SVG-Tortengrafik.
+  - Auto-Close der Ergebnis-Popups nach **30 Sekunden** oder per Klick auf den abgedunkelten Hintergrund.
+  - **Override-Logik**: Läuft eine neuere Meldung auf, schließt sich das alte Popup sofort und die neueste Meldung startet mit einem frischen 30-Sekunden-Timer.
+  - Kindgerechte Visualisierung: Fettgedruckte Namen im Popup (`**Oskar**`) und rotes Kreuz (**`❌`**) auf Buttons für abgelaufene/nicht geschaffte Aufgaben.
+  - Abgelaufene Aufgaben bleiben den Tag über visuell ausgegraut in der Übersicht erhalten.
 - **Energiefluss-Anzeige**: Live-Messwerte für PV, Speicher, Hausverbrauch, Netzbezug/Einspeisung mit dynamischen roten/grünen Richtungs-Pfeilen.
 - **Shelly Integration**: Statusanzeige für Kinderzimmer-Beleuchtung.
 
@@ -18,35 +23,43 @@ Ein serverloses, hochsicheres Dashboard optimiert für GitHub Pages, ausgelegt f
 
 ### 1. Aufgabentimer (`timer.js` / `timer.css`)
 - **Funktion**: Erzeugt dynamisch interaktive Timer für Aufgaben im Familienalltag (Zähneputzen, Anziehen, Aufräumen).
-- **Layout**: 3-Spalten-Uebersicht (*Heute*, *Morgen*, *Übermorgen*).
+- **Layout**: 3-Spalten-Übersicht (*Heute*, *Morgen*, *Übermorgen*).
 - **Visualisierung**: Restzeitanzeige in Form einer visuellen SVG-Analoguhr mit schrumpfendem rotem Kreissegment.
 - **Interaktion**: 
-  - Status *Bereit* -> Grüner Start-Button.
-  - Status *Laufend* -> Oranger Fertig-Button.
-  - Vorzeitige Abgabe -> Erfolgs-Popup mit **🚀 Raketen-Icon**.
-  - Zeitablauf ohne Abgabe -> Info-Popup mit **❌ rotem Kreuz**.
+  - Status *Bereit* -> Grüner Start-Button (`▶ Start`).
+  - Status *Laufend* -> Oranger Fertig-Button (`🟧 Fertig`).
+  - Status *Nicht geschafft* -> Deaktivierter grauer Button mit rotem Kreuz (`❌`).
+  - Vorzeitige Abgabe -> Erfolgs-Popup mit Konfetti („🎉 Super gemacht!“).
+  - Zeitablauf ohne Abgabe -> Info-Popup („❌ Nicht geschafft“).
+  - Popups schließen automatisch nach 30 Sekunden oder bei Klick auf den Backdrop.
 - **Erstellung**: Einstellungen über Modal-Dialog für Person (Oskar, Irma), Thema, Dauer, Zieltag und Wiederholungsanzahl.
 
-📌 Versionsstand & Branching
-v1.0 (Baseline - Stabil): Core-Timer-Funktionalität (js/timer.js), Modals, UI-Erstellung, Popups und lokale Zeitverwaltung. Dieser Stand ist eingefroren und bildet die Grundlage.
+## 📌 Versionsstand & Branching
 
-v1.1-dev (In Entwicklung):
+### v1.2 (Produktiv - Aktueller Stand)
+- **Hintergrund-Synchronisation**: Timestamp-basierte Countdown-Steuerung (`Date.now()`) für exakte Fortführung nach Tab-Wechseln, Hintergrunding und Display-Sperren.
+- **Ergebnis-Modal Upgrades**:
+  - Auto-Close nach 30 Sekunden.
+  - Override-Logik (neueste Meldung gewinnt und setzt Timer zurück).
+  - Backdrop-Click-Close.
+  - Fettgedruckte Namen (`**`) im Popup-Text.
+- **Failed-State & Cleanup**:
+  - Abgelaufene Aufgaben verbleiben ausgegraut in der Tagesliste.
+  - Button-Anzeige bei abgelaufenen Aufgaben auf kindgerechtes `❌` umgestellt.
+  - Test-UI (`test-timer.js` und Footer-HTML) vollständig aus dem Produktivcode aufgeräumt.
 
-Timestamp-basierte Countdown-Steuerung (Date.now()) für exakte Fortführung nach Tab-Wechseln, Hintergrunding und Display-Sperren.
+### v1.0 / v1.1 (Historie)
+- Baseline-Timer-Funktionalität, Modals, UI-Erstellung, Popups und initiale Timestamp-Steuerung.
 
-Pipedream-Schnittstelle zur geräteübergreifenden Synchronisation (iPad, Smartphone, PC).
-
-🛠️ Pipedream Backend Code & Setup (Geplant für 01.10.2026)
+## 🛠️ Pipedream Backend Code & Setup (Backend-Sync)
 Um die geräteübergreifende Synchronisation auf GitHub Pages ohne eigenen Server zu ermöglichen, nutzt das Dashboard einen Pipedream HTTP Workflow mit einem Data Store.
 
-1. Pipedream Workflow Schritte
-Erstelle in Pipedream einen neuen HTTP / Webhook Trigger.
+### 1. Pipedream Workflow Schritte
+1. Erstelle in Pipedream einen neuen HTTP / Webhook Trigger.
+2. Füge einen Data Store mit dem Namen `timer_store` hinzu.
+3. Füge einen Node.js Code Step mit folgendem Code ein:
 
-Füge einen Data Store mit dem Namen timer_store hinzu.
-
-Füge einen Node.js Code Step ein und füge den folgenden Code ein:
-
-Node.js Code für den Pipedream-Step:
+```javascript
 import { axios } from "@pipedream/platform";
 
 export default defineComponent({
@@ -78,7 +91,7 @@ export default defineComponent({
 
     // 2. GET-Anfrage: Aktuellen Timer-Status für Clients abrufen
     if (method === "GET") {
-      const activeTimer = await dataStore.get("test-timer-1");
+      const activeTimer = await dataStore.get("timer-data");
 
       return await $.respond({
         status: 200,
@@ -94,12 +107,3 @@ export default defineComponent({
     });
   },
 });
-
-🚀 Inbetriebnahme der Pipedream-Sync in js/test-timer.js
-Kopiere die Pipedream Webhook-URL aus deinem erstellten Workflow.
-
-Öffne js/test-timer.js.
-
-Trage die URL in PIPEDREAM_WEBHOOK_URL ein.
-
-Entferne die Kommentarzeichen (/* ... */) um die Pipedream-Funktionen und den Intervall-Aufruf startPipedreamSync().
