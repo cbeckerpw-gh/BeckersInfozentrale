@@ -1,1 +1,46 @@
+/* ==========================================================================
+   Einstellungen Modul Stylesheet (settings.css)
+   ========================================================================== */
 
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.btn-icon-settings {
+    background: transparent;
+    border: 1px solid var(--border-color, #444);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.2s, transform 0.1s;
+}
+
+.btn-icon-settings:active {
+    transform: scale(0.95);
+}
+
+.settings-section {
+    margin-top: 10px;
+}
+
+.settings-section h4 {
+    margin-bottom: 6px;
+    font-size: 1rem;
+    border-bottom: 1px solid var(--border-color, #444);
+    padding-bottom: 4px;
+}
+
+.settings-desc {
+    font-size: 0.85rem;
+    opacity: 0.8;
+    margin-bottom: 12px;
+}
+
+.settings-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
