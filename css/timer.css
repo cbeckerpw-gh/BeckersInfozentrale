@@ -2,6 +2,22 @@
    Aufgabentimer-Modul Stylesheet (timer.css)
    ========================================================================== */
 
+:root {
+    --card-bg-light: #ffffff;
+    --card-text-light: #222222;
+    --card-border-light: #e0e0e0;
+    --subtext-light: #666666;
+    --clock-face-light: #f0f0f0;
+    --clock-stroke-light: #cccccc;
+
+    --card-bg-dark: #282828;
+    --card-text-dark: #ffffff;
+    --card-border-dark: #3a3a3a;
+    --subtext-dark: #aaa;
+    --clock-face-dark: #1a1a1a;
+    --clock-stroke-dark: #444444;
+}
+
 .timer-module {
     margin-top: 20px;
 }
@@ -24,7 +40,7 @@
     background-color: var(--card-bg, #1e1e1e);
     border-radius: var(--border-radius, 8px);
     padding: 16px;
-    border: 1px solid #2a2a2a;
+    border: 1px solid var(--border-color, #2a2a2a);
 }
 
 .column-title {
@@ -40,17 +56,44 @@
     gap: 12px;
 }
 
-/* Timer Miniaturkarte */
+/* Timer Miniaturkarte - Standards / Dynamic Colors */
 .timer-card {
-    background: #282828;
+    background: var(--timer-card-bg, var(--card-bg-light));
+    color: var(--timer-card-text, var(--card-text-light));
+    border: 1px solid var(--timer-card-border, var(--card-border-light));
     border-radius: 8px;
     padding: 12px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     position: relative;
-    transition: opacity 0.3s ease, filter 0.3s ease;
+    transition: background 0.3s ease, color 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
+}
+
+/* Light Theme spezifische Regeln */
+body:not(.dark-mode):not(.dark-theme) .timer-card,
+[data-theme="light"] .timer-card {
+    --timer-card-bg: var(--card-bg-light);
+    --timer-card-text: var(--card-text-light);
+    --timer-card-border: var(--card-border-light);
+    --timer-subtext: var(--subtext-light);
+    --clock-face: var(--clock-face-light);
+    --clock-stroke: var(--clock-stroke-light);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.08);
+}
+
+/* Dark Theme spezifische Regeln */
+body.dark-mode .timer-card,
+body.dark-theme .timer-card,
+[data-theme="dark"] .timer-card {
+    --timer-card-bg: var(--card-bg-dark);
+    --timer-card-text: var(--card-text-dark);
+    --timer-card-border: var(--card-border-dark);
+    --timer-subtext: var(--subtext-dark);
+    --clock-face: var(--clock-face-dark);
+    --clock-stroke: var(--clock-stroke-dark);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
 }
 
 /* Ausgegrauter Zustand bei abgelaufenem Timer */
@@ -80,11 +123,12 @@
 .timer-title {
     font-weight: bold;
     font-size: 0.95rem;
+    color: inherit;
 }
 
 .timer-subtext {
     font-size: 0.8rem;
-    color: #aaa;
+    color: var(--timer-subtext, #888);
 }
 
 /* Analoguhr SVG Styles */
@@ -100,8 +144,8 @@
 }
 
 .clock-face {
-    fill: #1a1a1a;
-    stroke: #444;
+    fill: var(--clock-face, #1a1a1a);
+    stroke: var(--clock-stroke, #444);
     stroke-width: 2;
 }
 
@@ -111,7 +155,7 @@
 }
 
 .clock-center {
-    fill: #ffffff;
+    fill: var(--timer-card-text, #ffffff);
 }
 
 /* Interaktive Buttons */
@@ -158,7 +202,7 @@
 .btn-icon {
     background: none;
     border: none;
-    color: #fff;
+    color: inherit;
     font-size: 1.2rem;
     cursor: pointer;
 }
@@ -182,7 +226,8 @@
 }
 
 .modal-content {
-    background: #222;
+    background: var(--modal-bg, #222);
+    color: var(--modal-text, #fff);
     padding: 20px;
     border-radius: 12px;
     width: 90%;
@@ -208,7 +253,8 @@
     display: block;
     margin-bottom: 6px;
     font-size: 0.85rem;
-    color: #ccc;
+    color: inherit;
+    opacity: 0.9;
 }
 
 .select-group {
@@ -218,9 +264,9 @@
 }
 
 .btn-select {
-    background: #333;
-    border: 1px solid #555;
-    color: #fff;
+    background: var(--btn-select-bg, #333);
+    border: 1px solid var(--btn-select-border, #555);
+    color: var(--btn-select-text, #fff);
     padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;
@@ -230,6 +276,7 @@
 .btn-select.active {
     background: var(--accent-color, #00adb5);
     border-color: var(--accent-color, #00adb5);
+    color: #fff;
 }
 
 /* Result Modal Popup Styles */
