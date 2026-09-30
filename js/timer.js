@@ -1,13 +1,15 @@
 /**
- * Hauptmodul für Aufgabentimer (v1.4 - Bugfix Template-Strings & Layout)
+ * Hauptmodul für Aufgabentimer (v1.5 - Auto-Close, Override-Logik & Failed-State)
  */
 (function () {
     'use strict';
 
     let timers = [];
     let activeIntervals = {};
+    let resultModalTimeout = null; // Speichert den Auto-Close Timeout des Popups
     const STORAGE_KEY = 'family_info_center_timers';
     const MAX_CLOCK_MINUTES = 60; // Voller Kreis = 60 Minuten
+    const RESULT_POPUP_DURATION = 30000; // 30 Sekunden Anzeigezeit für Ergebnis-Popups
 
     function initTimerModule() {
         loadTimersFromStorage();
@@ -27,10 +29,20 @@
         const btnCloseModal = document.getElementById('btn-close-modal');
         const timerForm = document.getElementById('timer-form');
         const btnCloseResult = document.getElementById('btn-close-result');
+        const resultModal = document.getElementById('result-modal');
 
         if (btnOpenModal) btnOpenModal.addEventListener('click', openModal);
         if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
         if (btnCloseResult) btnCloseResult.addEventListener('click', closeResultModal);
+
+        // Klick außerhalb des Modals (Backdrop-Click) schließt das Ergebnis-Popup
+        if (resultModal) {
+            resultModal.addEventListener('click', function (e) {
+                if (e.target === resultModal) {
+                    closeResultModal();
+                }
+            });
+        }
 
         if (timerForm) {
             timerForm.addEventListener('submit', handleFormSubmit);
@@ -84,6 +96,12 @@
     function closeResultModal() {
         const modal = document.getElementById('result-modal');
         if (modal) modal.classList.add('hidden');
+
+        // Laufenden Auto-Close-Timer löschen
+        if (resultModalTimeout) {
+            clearTimeout(resultModalTimeout);
+            resultModalTimeout = null;
+        }
     }
 
     function handleFormSubmit(e) {
@@ -160,7 +178,7 @@
         const timer = timers.find(function (t) { return t.id === id; });
         if (!timer) return;
 
-        if (timer.status !== 'running') {
+        if (timer.status !== 'running' && timer.status !== 'failed') {
             const secToRun = (timer.remainingSeconds !== undefined && timer.remainingSeconds > 0) 
                 ? timer.remainingSeconds 
                 : timer.durationSeconds;
@@ -246,11 +264,18 @@
     }
 
     function handleTimerFinished(timer, isSuccess) {
-        timer.status = 'finished';
-        timer.endTime = null;
-        timer.remainingSeconds = 0;
-
-        timers = timers.filter(function (t) { return t.id !== timer.id; });
+        if (isSuccess) {
+            // Erfolgreich beendet -> Entfernen
+            timer.status = 'finished';
+            timer.endTime = null;
+            timer.remainingSeconds = 0;
+            timers = timers.filter(function (t) { return t.id !== timer.id; });
+        } else {
+            // Nicht geschafft -> Ausgegraut in der Liste behalten
+            timer.status = 'failed';
+            timer.endTime = null;
+            timer.remainingSeconds = 0;
+        }
 
         saveTimersToStorage();
         renderAllTimers();
@@ -265,6 +290,12 @@
 
         if (!resultModal) return;
 
+        // Vorherigen Auto-Close Timeout abbrechen, falls noch eine alte Meldung zu sehen ist (Override-Logik)
+        if (resultModalTimeout) {
+            clearTimeout(resultModalTimeout);
+            resultModalTimeout = null;
+        }
+
         const personName = timer.person === 'oskar' ? 'Oskar' : 'Irma';
 
         if (isSuccess) {
@@ -277,7 +308,13 @@
             if (btnCloseResult) btnCloseResult.textContent = 'OK';
         }
 
+        // Popup anzeigen
         resultModal.classList.remove('hidden');
+
+        // Neuentstart des 30-Sekunden Auto-Close-Timers
+        resultModalTimeout = setTimeout(function () {
+            closeResultModal();
+        }, RESULT_POPUP_DURATION);
     }
 
     function startGlobalBackgroundSync() {
@@ -355,6 +392,12 @@
         card.style.gap = '12px';
         card.style.padding = '12px 16px';
 
+        // Ausgrauen, wenn abgelaufen / nicht geschafft
+        if (timer.status === 'failed') {
+            card.style.opacity = '0.45';
+            card.style.filter = 'grayscale(80%)';
+        }
+
         const personName = timer.person === 'oskar' ? 'Oskar' : 'Irma';
         const personIcon = timer.person === 'oskar' ? '👦' : '👧';
 
@@ -371,7 +414,9 @@
         const repeatSuffix = timer.repeatLabel || '';
 
         let remainingSec = timer.durationSeconds;
-        if (timer.status === 'running' && timer.endTime) {
+        if (timer.status === 'failed') {
+            remainingSec = 0;
+        } else if (timer.status === 'running' && timer.endTime) {
             remainingSec = Math.max(0, Math.round((timer.endTime - Date.now()) / 1000));
         } else if (timer.remainingSeconds !== undefined) {
             remainingSec = timer.remainingSeconds;
@@ -446,6 +491,7 @@
         const actionsDiv = document.createElement('div');
 
         const isRunning = timer.status === 'running';
+        const isFailed = timer.status === 'failed';
         const actionBtn = document.createElement('button');
         actionBtn.style.padding = '8px 16px';
         actionBtn.style.borderRadius = '6px';
@@ -454,7 +500,12 @@
         actionBtn.style.fontWeight = 'bold';
         actionBtn.style.cursor = 'pointer';
 
-        if (isRunning) {
+        if (isFailed) {
+            actionBtn.style.backgroundColor = '#757575';
+            actionBtn.style.cursor = 'not-allowed';
+            actionBtn.textContent = '❌ Verpasst';
+            actionBtn.disabled = true;
+        } else if (isRunning) {
             actionBtn.style.backgroundColor = '#ff9800';
             actionBtn.textContent = '🟧 Fertig';
             actionBtn.setAttribute('onclick', 'finishTimerDirectly("' + timer.id + '")');
