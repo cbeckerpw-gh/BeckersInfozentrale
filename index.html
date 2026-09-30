@@ -15,18 +15,18 @@
 <body>
 
     <!-- Header-Bereich -->
-<header class="app-header">
-    <h1>Beckers Infozentrale</h1>
-    <button id="theme-toggle" class="theme-toggle-btn" aria-label="Theme wechseln">
-        🌙 Dark Mode
-    </button>
-    <button id="btn-open-settings" class="btn-icon-settings" aria-label="Einstellungen">
-    ⚙️
-</button>
-    <div id="status-bar" class="status-bar">
-        <span id="connection-status" class="status-online">Verbunden</span>
-    </div>
-</header>
+    <header class="app-header">
+        <h1>Beckers Infozentrale</h1>
+        <button id="theme-toggle" class="theme-toggle-btn" aria-label="Theme wechseln">
+            🌙 Dark Mode
+        </button>
+        <button id="btn-open-settings" class="btn-icon-settings" aria-label="Einstellungen">
+            ⚙️
+        </button>
+        <div id="status-bar" class="status-bar">
+            <span id="connection-status" class="status-online">Verbunden</span>
+        </div>
+    </header>
 
     <!-- Hauptbereich: Aufgabentimer Modul -->
     <main id="app-container" class="app-container">
@@ -76,7 +76,7 @@
 
                 <!-- 2. Themenauswahl -->
                 <div class="form-group">
-                    <label>Thema auswälen:</label>
+                    <label>Thema auswählen:</label>
                     <div class="select-group" id="group-topic">
                         <button type="button" class="btn-select active" data-value="zahne">🪥 Zähneputzen</button>
                         <button type="button" class="btn-select" data-value="anziehen">👕 Anziehen</button>
@@ -133,7 +133,27 @@
         </div>
     </div>
 
-    
+    <!-- Modal: Einstellungen & Testfunktionen -->
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>⚙️ Einstellungen &amp; Testfunktionen</h3>
+                <button id="btn-close-settings" class="btn-icon">&times;</button>
+            </div>
+            <div class="settings-section">
+                <h4>Timer-Verwaltung</h4>
+                <p class="settings-desc">Aktionen für die aktuelle Testphase:</p>
+                <div class="settings-buttons">
+                    <button id="btn-reset-timers" class="btn btn-warning btn-full">
+                        🔄 Alle Timer zurücksetzen (Status &amp; Zeit)
+                    </button>
+                    <button id="btn-clear-timers" class="btn btn-failed btn-full">
+                        🗑️ Alle Timer löschen (Speicher leeren)
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript-Dateien -->
     <script src="js/api.js"></script>
