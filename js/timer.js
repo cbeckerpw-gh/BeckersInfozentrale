@@ -1,5 +1,5 @@
 /**
- * Hauptmodul für Aufgabentimer (v1.5 - Auto-Close, Override-Logik & Failed-State)
+ * Hauptmodul für Aufgabentimer (v1.6 - Fettgedruckte Namen & Rotes Kreuz bei Failed)
  */
 (function () {
     'use strict';
@@ -290,7 +290,7 @@
 
         if (!resultModal) return;
 
-        // Vorherigen Auto-Close Timeout abbrechen, falls noch eine alte Meldung zu sehen ist (Override-Logik)
+        // Vorherigen Auto-Close Timeout abbrechen (Override-Logik)
         if (resultModalTimeout) {
             clearTimeout(resultModalTimeout);
             resultModalTimeout = null;
@@ -300,18 +300,18 @@
 
         if (isSuccess) {
             if (resultTitle) resultTitle.textContent = '🎉 Super gemacht!';
-            if (resultText) resultText.textContent = personName + ', super gemacht!';
+            if (resultText) resultText.innerHTML = '**' + personName + '**, super gemacht!';
             if (btnCloseResult) btnCloseResult.textContent = 'Super!';
         } else {
             if (resultTitle) resultTitle.textContent = '❌ Nicht geschafft';
-            if (resultText) resultText.textContent = personName + ', das hast Du leider nicht geschafft';
+            if (resultText) resultText.innerHTML = '**' + personName + '**, das hast Du leider nicht geschafft';
             if (btnCloseResult) btnCloseResult.textContent = 'OK';
         }
 
         // Popup anzeigen
         resultModal.classList.remove('hidden');
 
-        // Neuentstart des 30-Sekunden Auto-Close-Timers
+        // Neustart des 30-Sekunden Auto-Close-Timers
         resultModalTimeout = setTimeout(function () {
             closeResultModal();
         }, RESULT_POPUP_DURATION);
@@ -356,7 +356,7 @@
 
     function describePieSector(cx, cy, r, startMinutes, endMinutes) {
         const totalMinutes = MAX_CLOCK_MINUTES;
-        
+
         if (endMinutes >= totalMinutes) {
             return 'M ' + cx + ' ' + (cy - r) + ' A ' + r + ' ' + r + ' 0 1 1 ' + (cx - 0.001) + ' ' + (cy - r) + ' Z';
         }
@@ -501,9 +501,10 @@
         actionBtn.style.cursor = 'pointer';
 
         if (isFailed) {
-            actionBtn.style.backgroundColor = '#757575';
+            actionBtn.style.backgroundColor = '#555555';
             actionBtn.style.cursor = 'not-allowed';
-            actionBtn.textContent = '❌ Verpasst';
+            actionBtn.style.fontSize = '1.2rem';
+            actionBtn.textContent = '❌';
             actionBtn.disabled = true;
         } else if (isRunning) {
             actionBtn.style.backgroundColor = '#ff9800';
