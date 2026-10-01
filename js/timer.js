@@ -304,11 +304,11 @@
         
         if (isSuccess) {
             if (resultTitle) resultTitle.textContent = '🎉 ' + personName + ', super gemacht!';
-            if (resultText) resultText.innerHTML = '**Du hast die Aufgabe **"' + currentTaskTitle + '"** erfolgreich geschafft!';
+            if (resultText) resultText.innerHTML = 'Du hast die Aufgabe **"' + currentTaskTitle + '"** erfolgreich geschafft!';
             if (btnCloseResult) btnCloseResult.textContent = 'Super!';
         } else {
             if (resultTitle) resultTitle.textContent = '❌ ' + personName + ', knapp vorbei';
-            if (resultText) resultText.innerHTML = '**Du hast die Aufgabe **"' + currentTaskTitle + '"** leider nicht geschafft';
+            if (resultText) resultText.innerHTML = 'Du hast die Aufgabe **"' + currentTaskTitle + '"** leider nicht geschafft';
             if (btnCloseResult) btnCloseResult.textContent = 'OK';
         }
 
