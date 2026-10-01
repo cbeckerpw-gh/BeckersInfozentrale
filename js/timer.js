@@ -265,13 +265,11 @@
 
     function handleTimerFinished(timer, isSuccess) {
         if (isSuccess) {
-            // Erfolgreich beendet -> Entfernen
             timer.status = 'finished';
             timer.endTime = null;
             timer.remainingSeconds = 0;
             timers = timers.filter(function (t) { return t.id !== timer.id; });
         } else {
-            // Nicht geschafft -> Ausgegraut in der Liste behalten
             timer.status = 'failed';
             timer.endTime = null;
             timer.remainingSeconds = 0;
@@ -279,7 +277,13 @@
 
         saveTimersToStorage();
         renderAllTimers();
-        showResultModal(timer, isSuccess);
+        
+        // Hier übergeben wir den echten Namen des Themas (z.B. "Zähneputzen", "Anziehen" etc.)
+        let taskTitle = 'Zähneputzen';
+        if (timer.topic === 'anziehen') taskTitle = 'Anziehen';
+        else if (timer.topic === 'aufraumen') taskTitle = 'Aufräumen';
+
+        showResultModal(timer, isSuccess, taskTitle);
     }
 
     function showResultModal(timer, isSuccess, taskTitle) {
@@ -290,7 +294,6 @@
 
         if (!resultModal) return;
 
-        // Vorherigen Auto-Close Timeout abbrechen (Override-Logik)
         if (resultModalTimeout) {
             clearTimeout(resultModalTimeout);
             resultModalTimeout = null;
@@ -301,18 +304,16 @@
         
         if (isSuccess) {
             if (resultTitle) resultTitle.textContent = '🎉 ' + personName + ', super gemacht!';
-            if (resultText) resultText.innerHTML = '**' + personName + '**, du hast die Aufgabe **"' + currentTaskTitle + '"** erfolgreich geschafft!';
+            if (resultText) resultText.innerHTML = '**Du hast die Aufgabe **"' + currentTaskTitle + '"** erfolgreich geschafft!';
             if (btnCloseResult) btnCloseResult.textContent = 'Super!';
         } else {
             if (resultTitle) resultTitle.textContent = '❌ ' + personName + ', knapp vorbei';
-            if (resultText) resultText.innerHTML = '**' + personName + '**, du hast die Aufgabe **"' + currentTaskTitle + '"** leider nicht geschafft';
+            if (resultText) resultText.innerHTML = '**Du hast die Aufgabe **"' + currentTaskTitle + '"** leider nicht geschafft';
             if (btnCloseResult) btnCloseResult.textContent = 'OK';
         }
 
-        // Popup anzeigen
         resultModal.classList.remove('hidden');
 
-        // Neustart des 30-Sekunden Auto-Close-Timers
         resultModalTimeout = setTimeout(function () {
             closeResultModal();
         }, RESULT_POPUP_DURATION);
