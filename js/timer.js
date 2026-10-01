@@ -282,7 +282,7 @@
         showResultModal(timer, isSuccess);
     }
 
-    function showResultModal(timer, isSuccess) {
+    function showResultModal(timer, isSuccess, taskTitle) {
         const resultModal = document.getElementById('result-modal');
         const resultTitle = document.getElementById('result-title');
         const resultText = document.getElementById('result-text');
@@ -297,14 +297,15 @@
         }
 
         const personName = timer.person === 'oskar' ? 'Oskar' : 'Irma';
-
+        const currentTaskTitle = taskTitle || 'Aufgabe';
+        
         if (isSuccess) {
             if (resultTitle) resultTitle.textContent = '🎉 ' + personName + ', super gemacht!';
-            if (resultText) resultText.innerHTML = '**' + personName + '**, du hast die Aufgabe **"' + taskTitle + '"** erfolgreich geschafft!';
+            if (resultText) resultText.innerHTML = '**' + personName + '**, du hast die Aufgabe **"' + currentTaskTitle + '"** erfolgreich geschafft!';
             if (btnCloseResult) btnCloseResult.textContent = 'Super!';
         } else {
             if (resultTitle) resultTitle.textContent = '❌ ' + personName + ', knapp vorbei';
-            if (resultText) resultText.innerHTML = '**' + personName + '**, du hast die Aufgabe **"' + taskTitle + '"** leider nicht geschafft';
+            if (resultText) resultText.innerHTML = '**' + personName + '**, du hast die Aufgabe **"' + currentTaskTitle + '"** leider nicht geschafft';
             if (btnCloseResult) btnCloseResult.textContent = 'OK';
         }
 
