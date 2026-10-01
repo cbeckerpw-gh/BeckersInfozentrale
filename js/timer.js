@@ -299,12 +299,12 @@
         const personName = timer.person === 'oskar' ? 'Oskar' : 'Irma';
 
         if (isSuccess) {
-            if (resultTitle) resultTitle.textContent = '🎉 Super gemacht!';
-            if (resultText) resultText.innerHTML = '**' + personName + '**, super gemacht!';
+            if (resultTitle) resultTitle.textContent = '🎉 ' + personName + ', super gemacht!';
+            if (resultText) resultText.innerHTML = '**' + personName + '**, du hast die Aufgabe **"' + taskTitle + '"** erfolgreich geschafft!';
             if (btnCloseResult) btnCloseResult.textContent = 'Super!';
         } else {
-            if (resultTitle) resultTitle.textContent = '❌ Nicht geschafft';
-            if (resultText) resultText.innerHTML = '**' + personName + '**, das hast Du leider nicht geschafft';
+            if (resultTitle) resultTitle.textContent = '❌ ' + personName + ', knapp vorbei';
+            if (resultText) resultText.innerHTML = '**' + personName + '**, du hast die Aufgabe **"' + taskTitle + '"** leider nicht geschafft';
             if (btnCloseResult) btnCloseResult.textContent = 'OK';
         }
 
