@@ -1,5 +1,5 @@
 /**
- * Hauptmodul für Aufgabentimer (v1.7 - Personen-Auswahl: Oskar / Irma / Beide)
+ * Hauptmodul für Aufgabentimer (v1.8 - Mit Datum in Überschriften & "Beide" Auswahl)
  */
 (function () {
     'use strict';
@@ -16,6 +16,7 @@
         bindUIEvents();
         renderAllTimers();
         startGlobalBackgroundSync();
+        updateDateHeaders(); // Datum in den Überschriften aktualisieren
     }
 
     if (document.readyState === 'loading') {
@@ -63,7 +64,6 @@
 
             buttons.forEach(function (btn) {
                 btn.addEventListener('click', function () {
-                    // Alle Buttons in dieser Gruppe deaktivieren und nur den geklickten aktivieren (Single-Select)
                     buttons.forEach(function (b) { b.classList.remove('active'); });
                     this.classList.add('active');
                 });
@@ -154,6 +154,31 @@
         if (!group) return null;
         const activeBtn = group.querySelector('.btn-select.active');
         return activeBtn ? activeBtn.getAttribute('data-value') : null;
+    }
+
+    function updateDateHeaders() {
+        const today = new Date();
+        const tomorrow = new Date(today);
+        tomorrow.setDate(today.getDate() + 1);
+        
+        const afterTomorrow = new Date(today);
+        afterTomorrow.setDate(today.getDate() + 2);
+
+        const options = { weekday: 'long', day: '2-digit', month: '2-digit' };
+        
+        const elToday = document.getElementById('header-today');
+        const elTomorrow = document.getElementById('header-tomorrow');
+        const elAfterTomorrow = document.getElementById('header-after-tomorrow');
+
+        if (elToday) {
+            elToday.textContent = '📅 Heute (' + today.toLocaleDateString('de-DE', options) + ')';
+        }
+        if (elTomorrow) {
+            elTomorrow.textContent = '📅 Morgen (' + tomorrow.toLocaleDateString('de-DE', options) + ')';
+        }
+        if (elAfterTomorrow) {
+            elAfterTomorrow.textContent = '📅 Übermorgen (' + afterTomorrow.toLocaleDateString('de-DE', options) + ')';
+        }
     }
 
     window.startTimer = function (id) {
