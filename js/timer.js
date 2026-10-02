@@ -1,15 +1,15 @@
 /**
- * Hauptmodul für Aufgabentimer (v1.6 - Fettgedruckte Namen & Rotes Kreuz bei Failed)
+ * Hauptmodul für Aufgabentimer (v1.7 - Personen-Auswahl: Oskar / Irma / Beide)
  */
 (function () {
     'use strict';
 
     let timers = [];
     let activeIntervals = {};
-    let resultModalTimeout = null; // Speichert den Auto-Close Timeout des Popups
+    let resultModalTimeout = null;
     const STORAGE_KEY = 'family_info_center_timers';
-    const MAX_CLOCK_MINUTES = 60; // Voller Kreis = 60 Minuten
-    const RESULT_POPUP_DURATION = 30000; // 30 Sekunden Anzeigezeit für Ergebnis-Popups
+    const MAX_CLOCK_MINUTES = 60;
+    const RESULT_POPUP_DURATION = 30000;
 
     function initTimerModule() {
         loadTimersFromStorage();
@@ -35,7 +35,6 @@
         if (btnCloseModal) btnCloseModal.addEventListener('click', closeModal);
         if (btnCloseResult) btnCloseResult.addEventListener('click', closeResultModal);
 
-        // Klick außerhalb des Modals (Backdrop-Click) schließt das Ergebnis-Popup
         if (resultModal) {
             resultModal.addEventListener('click', function (e) {
                 if (e.target === resultModal) {
@@ -60,24 +59,13 @@
     function setupSelectGroups() {
         const selectGroups = document.querySelectorAll('.select-group');
         selectGroups.forEach(function (group) {
-            const isPersonGroup = group.id === 'group-person';
             const buttons = group.querySelectorAll('.btn-select');
 
             buttons.forEach(function (btn) {
                 btn.addEventListener('click', function () {
-                    if (isPersonGroup) {
-                        const activeBtns = group.querySelectorAll('.btn-select.active');
-                        if (this.classList.contains('active')) {
-                            if (activeBtns.length > 1) {
-                                this.classList.remove('active');
-                            }
-                        } else {
-                            this.classList.add('active');
-                        }
-                    } else {
-                        buttons.forEach(function (b) { b.classList.remove('active'); });
-                        this.classList.add('active');
-                    }
+                    // Alle Buttons in dieser Gruppe deaktivieren und nur den geklickten aktivieren (Single-Select)
+                    buttons.forEach(function (b) { b.classList.remove('active'); });
+                    this.classList.add('active');
                 });
             });
         });
@@ -97,7 +85,6 @@
         const modal = document.getElementById('result-modal');
         if (modal) modal.classList.add('hidden');
 
-        // Laufenden Auto-Close-Timer löschen
         if (resultModalTimeout) {
             clearTimeout(resultModalTimeout);
             resultModalTimeout = null;
@@ -107,8 +94,14 @@
     function handleFormSubmit(e) {
         e.preventDefault();
 
-        const selectedPersons = getActivePersonValues();
-        const personsToCreate = selectedPersons.length > 0 ? selectedPersons : ['oskar'];
+        const selectedPersonValue = getActiveSelectValue('group-person') || 'oskar';
+        
+        let personsToCreate = [];
+        if (selectedPersonValue === 'both' || selectedPersonValue === 'beide') {
+            personsToCreate = ['oskar', 'irma'];
+        } else {
+            personsToCreate = [selectedPersonValue];
+        }
 
         const topic = getActiveSelectValue('group-topic') || 'zahne';
         const durationMinutes = parseInt(getActiveSelectValue('group-duration') || '5', 10);
@@ -154,17 +147,6 @@
         saveTimersToStorage();
         renderAllTimers();
         closeModal();
-    }
-
-    function getActivePersonValues() {
-        const group = document.getElementById('group-person');
-        if (!group) return [];
-        const activeBtns = group.querySelectorAll('.btn-select.active');
-        const persons = [];
-        activeBtns.forEach(function (btn) {
-            persons.push(btn.getAttribute('data-value'));
-        });
-        return persons;
     }
 
     function getActiveSelectValue(groupId) {
@@ -278,10 +260,14 @@
         saveTimersToStorage();
         renderAllTimers();
         
-        // Hier übergeben wir den echten Namen des Themas (z.B. "Zähneputzen", "Anziehen" etc.)
         let taskTitle = 'Zähneputzen';
-        if (timer.topic === 'anziehen') taskTitle = 'Anziehen';
-        else if (timer.topic === 'aufraumen') taskTitle = 'Aufräumen';
+        if (timer.topic === 'anziehen' || timer.topic === 'kleidung') {
+            taskTitle = 'Anziehen';
+        } else if (timer.topic === 'aufraumen' || timer.topic === 'aufräumen') {
+            taskTitle = 'Aufräumen';
+        } else if (timer.topic && timer.topic !== 'zahne') {
+            taskTitle = timer.topic;
+        }
 
         showResultModal(timer, isSuccess, taskTitle);
     }
@@ -304,11 +290,11 @@
         
         if (isSuccess) {
             if (resultTitle) resultTitle.textContent = '🎉 ' + personName + ', super gemacht!';
-            if (resultText) resultText.innerHTML = 'Du hast die Aufgabe **"' + currentTaskTitle + '"** erfolgreich geschafft!';
+            if (resultText) resultText.innerHTML = '**' + personName + '**, du hast die Aufgabe **"' + currentTaskTitle + '"** erfolgreich geschafft!';
             if (btnCloseResult) btnCloseResult.textContent = 'Super!';
         } else {
             if (resultTitle) resultTitle.textContent = '❌ ' + personName + ', knapp vorbei';
-            if (resultText) resultText.innerHTML = 'Du hast die Aufgabe **"' + currentTaskTitle + '"** leider nicht geschafft';
+            if (resultText) resultText.innerHTML = '**' + personName + '**, du hast die Aufgabe **"' + currentTaskTitle + '"** leider nicht geschafft';
             if (btnCloseResult) btnCloseResult.textContent = 'OK';
         }
 
@@ -394,7 +380,6 @@
         card.style.gap = '12px';
         card.style.padding = '12px 16px';
 
-        // Ausgrauen, wenn abgelaufen / nicht geschafft
         if (timer.status === 'failed') {
             card.style.opacity = '0.45';
             card.style.filter = 'grayscale(80%)';
